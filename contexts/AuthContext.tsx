@@ -32,8 +32,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // As credenciais de admin são lidas exclusivamente de variáveis de ambiente.
-// Se não estiverem definidas no ambiente de deploy (Vercel), o login de admin falhará.
-// FIX: Reverted to using `process.env` for environment variables to fix a runtime error where `import.meta.env` was undefined. This aligns with the platform's standard.
 const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.VITE_ADMIN_PASSWORD;
 

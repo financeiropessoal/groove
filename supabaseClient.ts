@@ -1,9 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-// As credenciais agora serão lidas das variáveis de ambiente
-// Isso é mais seguro e a prática correta para produção.
-// Você precisará configurar essas variáveis na sua plataforma de hospedagem (Vercel, Netlify, etc.)
-// FIX: Reverted to using `process.env` for environment variables to fix a runtime error where `import.meta.env` was undefined. This aligns with the platform's standard, as seen with the Gemini API key.
+// As credenciais são lidas das variáveis de ambiente. No ambiente de execução,
+// espera-se que essas variáveis estejam disponíveis em `process.env`.
 const supabaseUrl = process.env.VITE_SUPABASE_URL as string;
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY as string;
 
