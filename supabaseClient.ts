@@ -1,8 +1,9 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-// Check for local var first, then fallback to VITE_ prefix (for Vercel)
-const supabaseUrl = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL) as string;
-const supabaseKey = (process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY) as string;
+// As variáveis de ambiente são injetadas pelo ambiente de execução.
+// Use process.env.VITE_... para compatibilidade com Vercel e ambiente local.
+const supabaseUrl = process.env.VITE_SUPABASE_URL as string;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY as string;
 
 
 export const isSupabaseConfigured = supabaseUrl && supabaseKey;
