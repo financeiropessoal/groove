@@ -28,19 +28,11 @@ const AdminLoginPage: React.FC = () => {
                         <i className="fas fa-shield-alt text-red-500 text-4xl"></i>
                         <h1 className="text-3xl font-bold tracking-wider">Groove Music</h1>
                     </Link>
-                    <h2 className="text-2xl font-bold text-gray-200">PAINEL DE CONTROLE - TESTE FINAL</h2>
+                    <h2 className="text-2xl font-bold text-gray-200">Painel Administrativo</h2>
                     <p className="text-gray-400">Acesso restrito para moderação da plataforma.</p>
                 </div>
 
                 <div className="bg-gray-800 p-8 rounded-lg shadow-2xl">
-                    
-                    {/* --- DEBUG BOX --- */}
-                    <div className="bg-yellow-300 border-l-4 border-yellow-500 text-yellow-800 p-4 mb-6 rounded-md" role="alert">
-                        <p className="font-bold">TESTE VERCEL</p>
-                        <p className="text-sm">Se você vê esta caixa com este texto, o deploy deste arquivo funcionou.</p>
-                    </div>
-                    {/* --- END DEBUG BOX --- */}
-                    
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">Email de Admin</label>

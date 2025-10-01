@@ -52,8 +52,8 @@ const HomePage: React.FC = () => {
         <div className="space-y-20">
             {/* Hero Section */}
             <section className="text-center py-20 bg-gray-900 rounded-lg" style={{backgroundImage: 'linear-gradient(rgba(17, 24, 39, 0.8), rgba(17, 24, 39, 1)), url(https://images.pexels.com/photos/3391932/pexels-photo-3391932.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2)', backgroundSize: 'cover', backgroundPosition: 'center'}}>
-                <h1 className="text-5xl md:text-6xl font-extrabold text-yellow-400 leading-tight">
-                    TESTE DE DEPLOY: SE VOCÊ VÊ ISSO, FUNCIONOU!
+                <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight">
+                    O Palco Digital da Sua Cidade
                 </h1>
                 <p className="text-lg md:text-xl text-gray-300 mt-4 max-w-3xl mx-auto">
                     Conectamos artistas talentosos a bares, restaurantes e eventos. Encontre a trilha sonora perfeita ou o próximo palco para o seu show.
