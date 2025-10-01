@@ -1,9 +1,10 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-// As credenciais são lidas das variáveis de ambiente. No ambiente de execução,
-// espera-se que essas variáveis estejam disponíveis em `process.env`.
-const supabaseUrl = process.env.VITE_SUPABASE_URL as string;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY as string;
+// As credenciais são lidas das variáveis de ambiente.
+// O ambiente de execução fornece segredos em `process.env`.
+// Supõe-se que prefixos como 'VITE_' sejam removidos pelo processo de build.
+const supabaseUrl = process.env.SUPABASE_URL as string;
+const supabaseKey = process.env.SUPABASE_ANON_KEY as string;
 
 // A verificação agora checa se as variáveis de ambiente foram carregadas.
 export const isSupabaseConfigured = supabaseUrl && supabaseKey;
