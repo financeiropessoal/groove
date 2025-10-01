@@ -31,9 +31,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// As credenciais de admin agora são lidas de variáveis de ambiente para segurança.
-const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL || 'admin@groovemusic.live';
-const ADMIN_PASSWORD = process.env.VITE_ADMIN_PASSWORD || 'admin123';
+// As credenciais de admin são lidas exclusivamente de variáveis de ambiente.
+// Se não estiverem definidas no ambiente de deploy (Vercel), o login de admin falhará.
+// FIX: Reverted to using `process.env` for environment variables to fix a runtime error where `import.meta.env` was undefined. This aligns with the platform's standard.
+const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.VITE_ADMIN_PASSWORD;
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [artist, setArtist] = useState<Artist | null>(null);
@@ -214,6 +216,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const adminLogin = async (email: string, pass: string): Promise<boolean> => {
      await new Promise(resolve => setTimeout(resolve, 500));
+     // Adicionada verificação para garantir que as variáveis de ambiente estão definidas
+     if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+        console.error("Credenciais de admin não configuradas no ambiente. Defina VITE_ADMIN_EMAIL e VITE_ADMIN_PASSWORD.");
+        return false;
+     }
      if(email.toLowerCase() === ADMIN_EMAIL && pass === ADMIN_PASSWORD) {
         localStorage.setItem('adminToken', 'true');
         setIsAdminAuthenticated(true);

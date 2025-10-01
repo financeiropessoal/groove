@@ -43,7 +43,7 @@ const AdminLoginPage: React.FC = () => {
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                                 className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                                placeholder="admin@groovemusic.live"
+                                placeholder="admin@exemplo.com"
                             />
                         </div>
                         
