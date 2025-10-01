@@ -35,95 +35,99 @@ export const VenueAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setIsLoading(false);
-      return;
-    }
-
     const createInitialProfile = async (user: User) => {
-        const name = user.user_metadata.full_name;
-        const address = user.user_metadata.address;
-        const phone = user.user_metadata.phone_number;
+      const name = user.user_metadata.full_name;
+      const address = user.user_metadata.address;
+      const phone = user.user_metadata.phone_number;
 
-        if (!name || !address || !user.email) {
-            console.error("Cannot create venue profile, user metadata incomplete.");
-            setCurrentVenue(null);
-            return;
-        }
+      if (!name || !address || !user.email) {
+        console.error('Cannot create venue profile, user metadata incomplete.');
+        setCurrentVenue(null);
+        return;
+      }
 
-        const venuePayload = VenueService.mapVenueToDb({
-            name,
-            address,
-            email: user.email,
-            imageUrl: 'https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
-            status: 'active',
-            description: '',
-            musicStyles: [],
-            capacity: 0,
-            contact: { name: '', phone: phone || '' },
-            website: '',
-            socials: { instagram: '' },
-            proposalInfo: {
-                structure: { title: 'Estrutura Oferecida', details: [] },
-                audience: { title: 'Nosso Público', details: [] },
-            },
-            photos: [],
-            equipment: [],
-        });
-        const finalPayload = { ...venuePayload, id: user.id };
+      const venuePayload = VenueService.mapVenueToDb({
+        name,
+        address,
+        email: user.email,
+        imageUrl:
+          'https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+        status: 'active',
+        description: '',
+        musicStyles: [],
+        capacity: 0,
+        contact: { name: '', phone: phone || '' },
+        website: '',
+        socials: { instagram: '' },
+        proposalInfo: {
+          structure: { title: 'Estrutura Oferecida', details: [] },
+          audience: { title: 'Nosso Público', details: [] },
+        },
+        photos: [],
+        equipment: [],
+      });
+      const finalPayload = { ...venuePayload, id: user.id };
 
-        const { data: newProfile, error: insertError } = await supabase
+      const { data: newProfile, error: insertError } = await supabase
+        .from('venues')
+        .insert(finalPayload)
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error(
+          'CRITICAL: RLS Error. Failed to create venue profile on login:',
+          insertError.message
+        );
+        setCurrentVenue(null);
+      } else {
+        setCurrentVenue(VenueService.mapVenueFromDb(newProfile));
+        sessionStorage.setItem('isNewUser', 'true');
+      }
+    };
+
+    if (isSupabaseConfigured) {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const user = session?.user ?? null;
+
+        if (user && user.user_metadata.user_type === 'venue') {
+          const { data: profile, error: profileError } = await supabase
             .from('venues')
-            .insert(finalPayload)
-            .select()
+            .select('*')
+            .eq('id', user.id)
             .single();
 
-        if (insertError) {
-            console.error("CRITICAL: RLS Error. Failed to create venue profile on login:", insertError.message);
+          if (profile?.status === 'blocked') {
+            await supabase.auth.signOut();
+            setAuthUser(null);
             setCurrentVenue(null);
-        } else {
-            setCurrentVenue(VenueService.mapVenueFromDb(newProfile));
-            sessionStorage.setItem('isNewUser', 'true');
-        }
-    };
-
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        const user = session?.user ?? null;
-        
-        if (user && user.user_metadata.user_type === 'venue') {
-            const { data: profile, error: profileError } = await supabase
-                .from('venues')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-
-            if (profile?.status === 'blocked') {
-                await supabase.auth.signOut();
-                setAuthUser(null);
-                setCurrentVenue(null);
-            } else if (profile) {
-                setAuthUser(user);
-                setCurrentVenue(VenueService.mapVenueFromDb(profile));
-            } else if (profileError && profileError.code === 'PGRST116') {
-                 await createInitialProfile(user);
-                 setAuthUser(user);
-            } else if (profileError) {
-                 console.error('Error fetching venue profile:', profileError.message);
-                 setCurrentVenue(null);
-                 setAuthUser(null);
-            }
-        } else {
+          } else if (profile) {
+            setAuthUser(user);
+            setCurrentVenue(VenueService.mapVenueFromDb(profile));
+          } else if (profileError && profileError.code === 'PGRST116') {
+            await createInitialProfile(user);
+            setAuthUser(user);
+          } else if (profileError) {
+            console.error('Error fetching venue profile:', profileError.message);
             setCurrentVenue(null);
             setAuthUser(null);
+          }
+        } else {
+          setCurrentVenue(null);
+          setAuthUser(null);
         }
         setIsLoading(false);
-    });
+      });
 
-    return () => {
-      subscription.unsubscribe();
-    };
-}, []);
+      return () => {
+        subscription.unsubscribe();
+      };
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
 
   const login = async (email: string, pass: string): Promise<LoginResult> => {
     if (!isSupabaseConfigured) {

@@ -31,9 +31,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// SIMULATION CONSTANTS - Admin login remains mock for now.
-const MOCKED_ADMIN_EMAIL = 'admin@groovemusic.live';
-const MOCKED_ADMIN_PASSWORD = 'admin123';
+// As credenciais de admin agora são lidas de variáveis de ambiente para segurança.
+const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL || 'admin@groovemusic.live';
+const ADMIN_PASSWORD = process.env.VITE_ADMIN_PASSWORD || 'admin123';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [artist, setArtist] = useState<Artist | null>(null);
@@ -43,101 +43,105 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setIsLoading(false);
-      return;
-    }
-
     const createInitialProfile = async (user: User) => {
-        const fullName = user.user_metadata.full_name;
-        const phone = user.user_metadata.phone_number;
-        if (!fullName || !user.email) {
-            console.error("Cannot create profile, user metadata incomplete.");
-            setArtist(null);
-            return;
-        }
+      const fullName = user.user_metadata.full_name;
+      const phone = user.user_metadata.phone_number;
+      if (!fullName || !user.email) {
+        console.error('Cannot create profile, user metadata incomplete.');
+        setArtist(null);
+        return;
+      }
 
-        const artistPayload = ArtistService.mapArtistToDb({
-            name: fullName,
-            email: user.email,
-            phone: phone,
-            status: 'pending',
-            genre: { primary: '', secondary: [] },
-            imageUrl: 'https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
-            youtubeVideoId: '', 
-            bio: '', 
-            socials: {}, 
-            bookedDates: [],
-            gallery: [], 
-            plans: [], 
-            repertoire: [], 
-            testimonials: [],
-            technicalRequirements: {
-                space: '',
-                power: '',
-                providedByArtist: [],
-                providedByContractor: []
-            },
-            hospitalityRider: [],
-        });
-        const finalPayload = { ...artistPayload, id: user.id };
+      const artistPayload = ArtistService.mapArtistToDb({
+        name: fullName,
+        email: user.email,
+        phone: phone,
+        status: 'pending',
+        genre: { primary: '', secondary: [] },
+        imageUrl:
+          'https://images.pexels.com/photos/167636/pexels-photo-167636.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+        youtubeVideoId: '',
+        bio: '',
+        socials: {},
+        bookedDates: [],
+        gallery: [],
+        plans: [],
+        repertoire: [],
+        testimonials: [],
+        technicalRequirements: {
+          space: '',
+          power: '',
+          providedByArtist: [],
+          providedByContractor: [],
+        },
+        hospitalityRider: [],
+      });
+      const finalPayload = { ...artistPayload, id: user.id };
 
-        const { data: newProfile, error: insertError } = await supabase
+      const { data: newProfile, error: insertError } = await supabase
+        .from('artists')
+        .insert(finalPayload)
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error(
+          'CRITICAL: RLS Error. Failed to create profile on login:',
+          insertError.message
+        );
+        setArtist(null);
+      } else {
+        setArtist(ArtistService.mapArtistFromDb(newProfile));
+        sessionStorage.setItem('isNewUser', 'true');
+      }
+    };
+
+    if (isSupabaseConfigured) {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const user = session?.user ?? null;
+
+        if (user && user.user_metadata.user_type === 'artist') {
+          const { data: profile, error: profileError } = await supabase
             .from('artists')
-            .insert(finalPayload)
-            .select()
+            .select('*')
+            .eq('id', user.id)
             .single();
 
-        if (insertError) {
-            console.error("CRITICAL: RLS Error. Failed to create profile on login:", insertError.message);
-            setArtist(null); 
-        } else {
-            setArtist(ArtistService.mapArtistFromDb(newProfile));
-            sessionStorage.setItem('isNewUser', 'true');
-        }
-    };
-
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        const user = session?.user ?? null;
-        
-        if (user && user.user_metadata.user_type === 'artist') {
-            const { data: profile, error: profileError } = await supabase
-                .from('artists')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-
-            if (profile?.status === 'blocked') {
-                // If user is blocked, force sign out and clear state
-                await supabase.auth.signOut();
-                setAuthUser(null);
-                setArtist(null);
-            } else if (profile) {
-                setAuthUser(user);
-                setArtist(ArtistService.mapArtistFromDb(profile));
-            } else if (profileError && profileError.code === 'PGRST116') {
-                 // Profile doesn't exist, create it automatically.
-                 await createInitialProfile(user);
-                 // After creation, user state is set inside createInitialProfile
-                 setAuthUser(user); // Ensure auth user is set
-            } else if (profileError) {
-                 console.error('Error fetching artist profile:', profileError.message);
-                 setArtist(null);
-                 setAuthUser(null);
-            }
-        } else {
-            // Not an artist session or no session
+          if (profile?.status === 'blocked') {
+            // If user is blocked, force sign out and clear state
+            await supabase.auth.signOut();
+            setAuthUser(null);
+            setArtist(null);
+          } else if (profile) {
+            setAuthUser(user);
+            setArtist(ArtistService.mapArtistFromDb(profile));
+          } else if (profileError && profileError.code === 'PGRST116') {
+            // Profile doesn't exist, create it automatically.
+            await createInitialProfile(user);
+            // After creation, user state is set inside createInitialProfile
+            setAuthUser(user); // Ensure auth user is set
+          } else if (profileError) {
+            console.error('Error fetching artist profile:', profileError.message);
             setArtist(null);
             setAuthUser(null);
+          }
+        } else {
+          // Not an artist session or no session
+          setArtist(null);
+          setAuthUser(null);
         }
         setIsLoading(false);
-    });
+      });
 
-    return () => {
-      subscription.unsubscribe();
-    };
-}, []);
+      return () => {
+        subscription.unsubscribe();
+      };
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
 
 
   const login = async (email: string, pass: string): Promise<LoginResult> => {
@@ -210,7 +214,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const adminLogin = async (email: string, pass: string): Promise<boolean> => {
      await new Promise(resolve => setTimeout(resolve, 500));
-     if(email.toLowerCase() === MOCKED_ADMIN_EMAIL && pass === MOCKED_ADMIN_PASSWORD) {
+     if(email.toLowerCase() === ADMIN_EMAIL && pass === ADMIN_PASSWORD) {
         localStorage.setItem('adminToken', 'true');
         setIsAdminAuthenticated(true);
         navigate('/admin/dashboard');

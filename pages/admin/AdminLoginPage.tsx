@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 const AdminLoginPage: React.FC = () => {
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState(''); // Added password state
+    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { adminLogin } = useAuth();
@@ -13,7 +13,7 @@ const AdminLoginPage: React.FC = () => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
-        const success = await adminLogin(email, password); // Pass password
+        const success = await adminLogin(email, password);
         if (!success) {
             setError('Credenciais de administrador inválidas.');
         }
@@ -47,7 +47,6 @@ const AdminLoginPage: React.FC = () => {
                             />
                         </div>
                         
-                        {/* Added password field */}
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Senha</label>
                             <input
@@ -80,12 +79,6 @@ const AdminLoginPage: React.FC = () => {
                             </button>
                         </div>
                     </form>
-                      <div className="text-center mt-6 p-3 bg-gray-900/50 rounded-lg text-xs text-gray-400">
-                        <p className="font-bold mb-1">Para demonstração:</p>
-                        <p>Email: <span className="font-mono text-red-300">admin@groovemusic.live</span></p>
-                        {/* Updated hint */}
-                        <p>Senha: <span className="font-mono text-red-300">admin123</span></p>
-                    </div>
                 </div>
             </div>
         </div>

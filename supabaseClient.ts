@@ -3,10 +3,9 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 // As credenciais agora serão lidas das variáveis de ambiente
 // Isso é mais seguro e a prática correta para produção.
 // Você precisará configurar essas variáveis na sua plataforma de hospedagem (Vercel, Netlify, etc.)
-// FIX: Cast import.meta to any to resolve TypeScript error 'Property 'env' does not exist on type 'ImportMeta''.
-const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL as string;
-// FIX: Cast import.meta to any to resolve TypeScript error 'Property 'env' does not exist on type 'ImportMeta''.
-const supabaseKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY as string;
+// FIX: Changed from import.meta.env to process.env to align with the execution environment.
+const supabaseUrl = process.env.VITE_SUPABASE_URL as string;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY as string;
 
 // A verificação agora checa se as variáveis de ambiente foram carregadas.
 export const isSupabaseConfigured = supabaseUrl && supabaseKey;
