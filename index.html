@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Groove Music</title>
+    <!-- SEO & Social Sharing Meta Tags -->
+    <meta name="description" content="Groove Music: Uma plataforma para conectar artistas musicais locais com bares e restaurantes da cidade. Artistas podem mostrar seu trabalho e locais podem encontrar talentos para seus eventos." />
+    <meta property="og:title" content="Groove Music: O Palco Digital da Sua Cidade" />
+    <meta property="og:description" content="Conecte-se com artistas locais ou encontre o palco perfeito para seu show. A plataforma completa para a cena musical da sua cidade." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://images.pexels.com/photos/3391932/pexels-photo-3391932.jpeg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Groove Music: O Palco Digital da Sua Cidade" />
+    <meta name="twitter:description" content="Conecte-se com artistas locais ou encontre o palco perfeito para seu show. A plataforma completa para a cena musical da sua cidade." />
+    <meta name="twitter:image" content="https://images.pexels.com/photos/3391932/pexels-photo-3391932.jpeg" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/",
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-router-dom": "https://aistudiocdn.com/react-router-dom@^6.25.1",
+    "react-router-dom/": "https://aistudiocdn.com/react-router-dom@^6.25.1/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
+    "recharts": "https://aistudiocdn.com/recharts@^2.12.7",
+    "recharts/": "https://aistudiocdn.com/recharts@^2.12.7/",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.44.4"
+  }
+}
+</script>
+<style>
+  /* Custom Scrollbar for Webkit browsers */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #111827; /* bg-gray-900 */
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #4b5563; /* bg-gray-600 */
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #6b7280; /* bg-gray-500 */
+  }
+
+  /* Fade-in animation for tab content */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+  
+  /* Toast Notifications */
+  @keyframes toastIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes toastOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+
+  .toast-in {
+    animation: toastIn 0.5s ease-out forwards;
+  }
+  
+  .toast-out {
+    animation: toastOut 0.5s ease-in forwards;
+  }
+  
+  /* Sliding Panel */
+  @keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+
+  @keyframes slideOutRight {
+    from { transform: translateX(0); }
+    to { transform: translateX(100%); }
+  }
+
+  @keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes fadeOutOverlay {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+
+  .slide-in-right {
+    animation: slideInRight 0.3s ease-out forwards;
+  }
+  .slide-out-right {
+    animation: slideOutRight 0.3s ease-in forwards;
+  }
+  .fade-in-overlay {
+    animation: fadeInOverlay 0.3s ease-out forwards;
+  }
+  .fade-out-overlay {
+    animation: fadeOutOverlay 0.3s ease-in forwards;
+  }
+
+
+</style>
+</head>
+  <body class="bg-gray-900 text-white">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
