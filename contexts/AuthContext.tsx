@@ -31,8 +31,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
-const ADMIN_PASSWORD = process.env.VITE_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD;
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || process.env.VITE_ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD;
 
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -215,7 +215,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const adminLogin = async (email: string, pass: string): Promise<boolean> => {
      await new Promise(resolve => setTimeout(resolve, 500));
      if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-        console.error("Credenciais de admin não configuradas no ambiente. Defina VITE_ADMIN_EMAIL e VITE_ADMIN_PASSWORD em seu provedor de hosting.");
+        console.error("Credenciais de admin não configuradas no ambiente. Defina ADMIN_EMAIL e ADMIN_PASSWORD.");
         return false;
      }
      if(email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_PASSWORD) {
