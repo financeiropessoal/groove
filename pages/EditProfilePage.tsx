@@ -90,7 +90,13 @@ const EditProfilePage: React.FC = () => {
         setSuggestedBio(null);
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = process.env.API_KEY;
+            if (!apiKey) {
+                setAiError("A chave da API de IA não está configurada. Esta funcionalidade está desabilitada.");
+                setIsImprovingBio(false);
+                return;
+            }
+            const ai = new GoogleGenAI({ apiKey });
             const prompt = `
                 Você é um especialista em marketing para músicos. Revise e melhore a biografia a seguir para o perfil de um artista em uma plataforma de contratação de shows. 
                 O objetivo é tornar o texto mais profissional, cativante e atraente para donos de bares, restaurantes e produtores de eventos.
@@ -114,7 +120,7 @@ const EditProfilePage: React.FC = () => {
 
         } catch (error) {
             console.error("Erro ao chamar a API do Gemini:", error);
-            setAiError("Ocorreu um erro ao tentar melhorar o texto. Tente novamente.");
+            setAiError("Ocorreu um erro ao tentar melhorar o texto. Verifique sua chave de API e tente novamente.");
         } finally {
             setIsImprovingBio(false);
         }

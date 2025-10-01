@@ -189,7 +189,13 @@ const ArtistDashboardPage: React.FC = () => {
                 return;
             }
 
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = process.env.API_KEY;
+            if (!apiKey) {
+                setRadarResult("A chave da API de IA não está configurada. Esta funcionalidade está desabilitada.");
+                return;
+            }
+
+            const ai = new GoogleGenAI({ apiKey });
             const prompt = `
                 Você é um agente de talentos musicais. Analise o perfil do artista e a lista de vagas abertas para shows.
                 Retorne uma análise curta e direta sobre qual vaga é a mais adequada para o artista, e por quê.
@@ -216,7 +222,7 @@ const ArtistDashboardPage: React.FC = () => {
             }
         } catch (error) {
             console.error("Radar AI error:", error);
-            setRadarResult("Ocorreu um erro ao consultar o radar. Tente novamente mais tarde.");
+            setRadarResult("Ocorreu um erro ao consultar o radar. Verifique se a chave da API está correta e tente novamente.");
         } finally {
             setIsRadarLoading(false);
         }

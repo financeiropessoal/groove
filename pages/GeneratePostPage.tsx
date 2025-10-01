@@ -49,7 +49,13 @@ const GeneratePostPage: React.FC = () => {
         setCopySuccess('');
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = process.env.API_KEY;
+            if (!apiKey) {
+                setError("A chave da API de IA não está configurada. Esta funcionalidade está desabilitada.");
+                setIsGenerating(false);
+                return;
+            }
+            const ai = new GoogleGenAI({ apiKey });
             const prompt = `
                 Você é um especialista em marketing de redes sociais para músicos.
                 Crie um post para Instagram, curto e impactante, para divulgar um show.
@@ -79,7 +85,7 @@ const GeneratePostPage: React.FC = () => {
 
         } catch (err) {
             console.error("Erro ao gerar post com IA:", err);
-            setError("Ocorreu um erro ao gerar o post. Tente novamente.");
+            setError("Ocorreu um erro ao gerar o post. Verifique sua chave de API e tente novamente.");
         } finally {
             setIsGenerating(false);
         }
