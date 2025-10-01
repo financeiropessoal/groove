@@ -28,8 +28,8 @@ const AdminLoginPage: React.FC = () => {
                         <i className="fas fa-shield-alt text-red-500 text-4xl"></i>
                         <h1 className="text-3xl font-bold tracking-wider">Groove Music</h1>
                     </Link>
-                    <h2 className="text-2xl font-bold text-gray-200">Painel Administrativo</h2>
-                    <p className="text-gray-400">Controle e moderação da plataforma.</p>
+                    <h2 className="text-2xl font-bold text-gray-200">Painel de Controle (Admin)</h2>
+                    <p className="text-gray-400">Acesso restrito para moderação da plataforma.</p>
                 </div>
 
                 <div className="bg-gray-800 p-8 rounded-lg shadow-2xl">
