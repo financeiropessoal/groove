@@ -31,11 +31,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// As credenciais de admin são lidas exclusivamente de variáveis de ambiente.
-// O ambiente de execução fornece segredos em `process.env`.
-// Supõe-se que prefixos como 'VITE_' sejam removidos pelo processo de build.
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+// As credenciais de admin são lidas das variáveis de ambiente do cliente.
+const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.VITE_ADMIN_PASSWORD;
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [artist, setArtist] = useState<Artist | null>(null);
@@ -218,7 +216,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
      await new Promise(resolve => setTimeout(resolve, 500));
      // Adicionada verificação para garantir que as variáveis de ambiente estão definidas
      if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-        console.error("Credenciais de admin não configuradas no ambiente. Defina ADMIN_EMAIL e ADMIN_PASSWORD em seu provedor de hosting.");
+        console.error("Credenciais de admin não configuradas no ambiente. Defina VITE_ADMIN_EMAIL e VITE_ADMIN_PASSWORD em seu provedor de hosting.");
         return false;
      }
      if(email.toLowerCase() === ADMIN_EMAIL && pass === ADMIN_PASSWORD) {

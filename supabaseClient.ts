@@ -1,10 +1,10 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-// As credenciais são lidas das variáveis de ambiente.
-// O ambiente de execução fornece segredos em `process.env`.
-// Supõe-se que prefixos como 'VITE_' sejam removidos pelo processo de build.
-const supabaseUrl = process.env.SUPABASE_URL as string;
-const supabaseKey = process.env.SUPABASE_ANON_KEY as string;
+// As credenciais são lidas das variáveis de ambiente. A API do Gemini exige o uso de
+// `process.env`, então usaremos o mesmo para consistência. As variáveis devem
+// ter o prefixo VITE_ no ambiente de hospedagem.
+const supabaseUrl = process.env.VITE_SUPABASE_URL as string;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY as string;
 
 // A verificação agora checa se as variáveis de ambiente foram carregadas.
 export const isSupabaseConfigured = supabaseUrl && supabaseKey;
@@ -19,9 +19,8 @@ if (isSupabaseConfigured) {
   const warningMessage =
 `************************************************************
 *** ATENÇÃO: VARIÁVEIS DE AMBIENTE NÃO ENCONTRADAS! ***
-*** Crie um arquivo .env na raiz do projeto com:   ***
-*** VITE_SUPABASE_URL=SUA_URL                      ***
-*** VITE_SUPABASE_ANON_KEY=SUA_CHAVE               ***
+*** Verifique suas variáveis de ambiente na Vercel ou  ***
+*** no seu arquivo .env local (ex: VITE_SUPABASE_URL). ***
 *** A aplicação funcionará em modo de simulação.     ***
 ************************************************************`;
   console.warn(warningMessage);
