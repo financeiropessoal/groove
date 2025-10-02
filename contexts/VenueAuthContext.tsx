@@ -36,9 +36,9 @@ export const VenueAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
 
   useEffect(() => {
     const createInitialProfile = async (user: User) => {
-      const name = user.user_metadata.full_name;
-      const address = user.user_metadata.address;
-      const phone = user.user_metadata.phone_number;
+      const name = user.user_metadata?.full_name;
+      const address = user.user_metadata?.address;
+      const phone = user.user_metadata?.phone_number;
 
       if (!name || !address || !user.email) {
         console.error('Cannot create venue profile, user metadata incomplete.');
@@ -92,7 +92,7 @@ export const VenueAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
       } = supabase.auth.onAuthStateChange(async (event, session) => {
         const user = session?.user ?? null;
 
-        if (user && user.user_metadata.user_type === 'venue') {
+        if (user && user.user_metadata?.user_type === 'venue') {
           const { data: profile, error: profileError } = await supabase
             .from('venues')
             .select('*')
@@ -151,6 +151,12 @@ export const VenueAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
 
     if (sessionData.user) {
+        // FIX: Verify user type before proceeding to prevent wrong user type login.
+        if (sessionData.user.user_metadata?.user_type !== 'venue') {
+            await supabase.auth.signOut();
+            return { success: false, message: 'Este e-mail pertence a um artista. Por favor, use a página de login para artistas.' };
+        }
+
         try {
             const { data: profile, error: profileError } = await supabase
                 .from('venues')
