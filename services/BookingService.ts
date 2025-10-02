@@ -4,6 +4,7 @@ import { isSupabaseConfigured, supabase } from '../supabaseClient';
 export interface EnrichedBooking {
   id: number;
   artistId: string;
+  artistName: string;
   venueId: string;
   venueName: string;
   planId: number;
@@ -76,7 +77,7 @@ export class BookingService {
         status,
         payout_status,
         venues ( name ),
-        artists ( plans )
+        artists ( name, plans )
       `)
       .eq('artist_id', artistId);
 
@@ -90,6 +91,7 @@ export class BookingService {
       return {
         id: b.id,
         artistId: b.artist_id,
+        artistName: b.artists?.name || 'Artista Desconhecido',
         venueId: b.venue_id,
         venueName: b.venues?.name || 'Local Desconhecido',
         planId: b.plan_id,

@@ -48,7 +48,8 @@ const ReportProblemModal: React.FC<ReportProblemModalProps> = ({ isOpen, onClose
           <div className="p-6">
             <h3 className="text-xl font-bold text-white mb-2">Relatar um Problema</h3>
             <p className="text-gray-400 mb-4 text-sm">
-              Sobre o show com <span className="font-semibold text-red-400">{booking.artistName || booking.venueName}</span> em {new Date(booking.date + 'T00:00:00').toLocaleDateString('pt-BR')}
+              {/* FIX: Show the name of the other party involved in the booking. */}
+              Sobre o show com <span className="font-semibold text-red-400">{reporter.type === 'artist' ? booking.venueName : booking.artistName}</span> em {new Date(booking.date + 'T00:00:00').toLocaleDateString('pt-BR')}
             </p>
             <textarea
               value={description}

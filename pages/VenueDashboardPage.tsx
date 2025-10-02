@@ -10,7 +10,7 @@ import { RatingService } from '../services/RatingService';
 import { useToast } from '../contexts/ToastContext';
 import OnboardingModal from '../components/OnboardingModal';
 import ReportProblemModal from '../components/ReportProblemModal';
-import { BookingService } from '../services/BookingService';
+import { EnrichedBooking } from '../services/BookingService';
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: string; link?: string; linkText?: string; }> = ({ title, value, icon, link, linkText }) => (
     <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
@@ -47,7 +47,8 @@ const VenueDashboardPage: React.FC = () => {
     const [showOnboarding, setShowOnboarding] = useState(false);
     
     const [showReportModal, setShowReportModal] = useState(false);
-    const [gigToReport, setGigToReport] = useState<EnrichedGig | null>(null);
+    // FIX: Use a state that holds an object compatible with the modal's expected props.
+    const [bookingToReport, setBookingToReport] = useState<EnrichedBooking | null>(null);
 
 
     const fetchData = async () => {
@@ -154,7 +155,24 @@ const VenueDashboardPage: React.FC = () => {
     };
 
     const handleOpenReportModal = (gig: EnrichedGig) => {
-        setGigToReport(gig);
+        // FIX: Map the EnrichedGig to an EnrichedBooking structure to match modal props.
+        if (!gig.artist || !currentVenue) {
+            showToast('Dados do show incompletos para gerar um relatório.', 'error');
+            return;
+        }
+        setBookingToReport({
+            id: gig.id,
+            artistId: gig.artist.id,
+            artistName: gig.artist.name,
+            venueId: currentVenue.id,
+            venueName: currentVenue.name,
+            date: gig.date,
+            planId: 0, // Not applicable for gig offers
+            planName: 'Vaga Aberta',
+            planPrice: gig.payment,
+            status: 'paid', // Past gigs are implicitly paid/done
+            payoutStatus: 'paid'
+        });
         setShowReportModal(true);
     };
 
@@ -280,11 +298,11 @@ const VenueDashboardPage: React.FC = () => {
                 itemToRate={{ name: itemToRate.artist.name, type: 'o artista'}}
             />
         )}
-        {gigToReport && (
+        {bookingToReport && (
             <ReportProblemModal
                 isOpen={showReportModal}
                 onClose={() => setShowReportModal(false)}
-                booking={gigToReport as any} // Cast because it's a Gig, but modal expects booking. Structure is similar.
+                booking={bookingToReport}
                 reporter={{ id: authUser.id, type: 'venue' }}
             />
         )}

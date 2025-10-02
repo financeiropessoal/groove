@@ -3,6 +3,7 @@ import { Venue } from '../../data';
 import { VenueService } from '../../services/VenueService';
 import { AdminService } from '../../services/AdminService';
 import { useToast } from '../../contexts/ToastContext';
+import { supabase } from '../../supabaseClient';
 
 const AdminVenuesPage: React.FC = () => {
     const [venues, setVenues] = useState<Venue[]>([]);
@@ -15,7 +16,7 @@ const AdminVenuesPage: React.FC = () => {
     const fetchVenues = async () => {
         setIsLoading(true);
         // Admin needs to see all venues, regardless of status.
-        const { data, error } = await (await import('../../supabaseClient')).supabase.from('venues').select('*').order('created_at', { ascending: false });
+        const { data, error } = await supabase.from('venues').select('*').order('created_at', { ascending: false });
         if (data) {
              setVenues(data.map(VenueService.mapVenueFromDb));
         }

@@ -49,6 +49,7 @@ const GeneratePostPage: React.FC = () => {
         setCopySuccess('');
 
         try {
+            // FIX: Use process.env.API_KEY as per Gemini API guidelines.
             const apiKey = process.env.API_KEY;
             if (!apiKey) {
                 setError("A chave da API de IA não está configurada. Esta funcionalidade está desabilitada.");

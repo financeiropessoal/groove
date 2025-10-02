@@ -1,21 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { GigService } from '../services/GigService';
+// FIX: Using EnrichedGig from GigService which has an optional venue property, matching the service's return type.
+import { GigService, EnrichedGig } from '../services/GigService';
 import { GigOffer, Venue } from '../data';
 import EmptyState from '../components/EmptyState';
 import { useToast } from '../contexts/ToastContext';
 
-interface EnrichedGigOffer extends GigOffer {
-    venue: Venue | undefined;
-}
+// FIX: This interface was causing a type conflict with EnrichedGig. Removed in favor of the imported type.
+// interface EnrichedGigOffer extends GigOffer {
+//     venue: Venue | undefined;
+// }
 
 const OpenGigsPage: React.FC = () => {
     const { artist, logout } = useAuth();
     const navigate = useNavigate();
     const { showToast } = useToast();
 
-    const [gigs, setGigs] = useState<EnrichedGigOffer[]>([]);
+    // FIX: Changed state to use EnrichedGig[] to match the service response type.
+    const [gigs, setGigs] = useState<EnrichedGig[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [bookingGigId, setBookingGigId] = useState<number | null>(null);
 
@@ -23,13 +26,15 @@ const OpenGigsPage: React.FC = () => {
         const fetchGigs = async () => {
             setIsLoading(true);
             const openGigs = await GigService.getAllOpenGigs();
-            setGigs(openGigs);
+            // FIX: This line had the type error. Now types match. Also, filter out gigs without a venue for safety.
+            setGigs(openGigs.filter(g => g.venue));
             setIsLoading(false);
         };
         fetchGigs();
     }, []);
 
-    const handleBookGig = async (gig: EnrichedGigOffer) => {
+    // FIX: Changed parameter type to EnrichedGig to match the state.
+    const handleBookGig = async (gig: EnrichedGig) => {
         if (!artist) return;
         
         if (window.confirm(`Você confirma que deseja reservar o show no ${gig.venue?.name} para ${new Date(gig.date + 'T00:00:00').toLocaleDateString('pt-BR')}?`)) {
