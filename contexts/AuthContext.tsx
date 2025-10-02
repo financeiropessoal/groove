@@ -31,9 +31,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// FIX: Switched back to process.env and removed VITE_ prefix to fix runtime errors.
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+// FIX: Switched to import.meta.env with VITE_ prefix, the correct way for Vite apps.
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -226,7 +226,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const adminLogin = async (email: string, pass: string): Promise<boolean> => {
      await new Promise(resolve => setTimeout(resolve, 500));
      if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-        console.error("Credenciais de admin não configuradas no ambiente. Defina ADMIN_EMAIL e ADMIN_PASSWORD.");
+        console.error("Credenciais de admin não configuradas no ambiente. Defina VITE_ADMIN_EMAIL e VITE_ADMIN_PASSWORD.");
         return false;
      }
      if(email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_PASSWORD) {

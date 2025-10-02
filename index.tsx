@@ -1,4 +1,6 @@
-// FIX: Moved the vite/client reference to a more appropriate file (types.ts) to resolve type definition errors and apply it globally.
+/// <reference types="vite/client" />
+
+// FIX: Moved the vite/client reference here from types.ts to ensure it's loaded globally and resolves import.meta.env type errors.
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';

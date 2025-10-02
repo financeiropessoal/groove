@@ -1,13 +1,3 @@
-// FIX: Reverted environment variable definitions from `import.meta.env` to `process.env` and removed the 'VITE_' prefix. This is to address runtime errors where `import.meta.env` was undefined and to align with platform instructions that mandate using `process.env`.
-declare var process: {
-  env: {
-    readonly SUPABASE_URL: string;
-    readonly SUPABASE_ANON_KEY: string;
-    readonly ADMIN_EMAIL: string;
-    readonly ADMIN_PASSWORD: string;
-    readonly API_KEY: string;
-  }
-}
 
 export interface Notification {
   id: string;

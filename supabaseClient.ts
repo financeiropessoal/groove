@@ -6,9 +6,9 @@ let supabase: SupabaseClient;
 let isSupabaseConfigured: boolean;
 
 try {
-  // FIX: Switched back to process.env and removed VITE_ prefix to fix runtime errors.
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_ANON_KEY;
+  // FIX: Switched to import.meta.env with VITE_ prefix, the correct way for Vite apps.
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
   // Verificação de segurança: garantir que as variáveis existam
   if (!supabaseUrl || !supabaseKey) {
