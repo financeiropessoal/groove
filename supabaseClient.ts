@@ -6,7 +6,7 @@ let supabase: SupabaseClient;
 let isSupabaseConfigured: boolean;
 
 try {
-  // As variáveis de ambiente são injetadas pelo ambiente de execução.
+  // FIX: Switched back to process.env and removed VITE_ prefix to fix runtime errors.
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_ANON_KEY;
   

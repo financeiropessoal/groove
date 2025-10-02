@@ -31,7 +31,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// FIX: Removed `VITE_` prefix from environment variables to match the expected runtime environment.
+// FIX: Switched back to process.env and removed VITE_ prefix to fix runtime errors.
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
@@ -97,7 +97,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     };
 
-    if (isSupabaseConfigured) {
+    if (isSupabaseConfigured && supabase) {
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -146,7 +146,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 
   const login = async (email: string, pass: string): Promise<LoginResult> => {
-    if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured || !supabase) {
       return { success: false, message: "A funcionalidade de login está desabilitada." };
     }
 
@@ -190,7 +190,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const signup = async (name: string, email: string, pass: string, phone: string): Promise<SignupResult> => {
-    if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured || !supabase) {
         return { success: false, error: "Supabase não configurado." };
     }
 
@@ -215,7 +215,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
-    if (isSupabaseConfigured) {
+    if (isSupabaseConfigured && supabase) {
       await supabase.auth.signOut();
     }
     setArtist(null);
@@ -245,7 +245,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }
 
   const updateArtistProfile = async (updatedData: Partial<Artist>) => {
-    if (!artist || !isSupabaseConfigured) return;
+    if (!artist || !isSupabaseConfigured || !supabase) return;
     
     const updatedArtist = { ...artist, ...updatedData };
     const supabasePayload = ArtistService.mapArtistToDb(updatedArtist);

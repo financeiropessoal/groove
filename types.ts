@@ -1,13 +1,11 @@
-// FIX: Removed the `VITE_` prefix from environment variable names. The execution environment likely exposes them directly (e.g., `API_KEY` instead of `VITE_API_KEY`), which was causing them to be undefined at runtime.
-declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      readonly SUPABASE_URL: string;
-      readonly SUPABASE_ANON_KEY: string;
-      readonly ADMIN_EMAIL: string;
-      readonly ADMIN_PASSWORD: string;
-      readonly API_KEY: string;
-    }
+// FIX: Reverted environment variable definitions from `import.meta.env` to `process.env` and removed the 'VITE_' prefix. This is to address runtime errors where `import.meta.env` was undefined and to align with platform instructions that mandate using `process.env`.
+declare var process: {
+  env: {
+    readonly SUPABASE_URL: string;
+    readonly SUPABASE_ANON_KEY: string;
+    readonly ADMIN_EMAIL: string;
+    readonly ADMIN_PASSWORD: string;
+    readonly API_KEY: string;
   }
 }
 
