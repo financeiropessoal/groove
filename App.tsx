@@ -48,10 +48,16 @@ import ConversationsPage from './pages/ConversationsPage';
 import SharedProtectedRoute from './components/SharedProtectedRoute';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import ConfigurationWarning from './components/ConfigurationWarning';
+import { isSupabaseConfigured } from './supabaseClient';
 
 import ToastContainer from './components/ToastContainer';
 
 const App: React.FC = () => {
+  if (!isSupabaseConfigured) {
+    return <ConfigurationWarning />;
+  }
+
   const location = useLocation();
   const isAuthPage = location.pathname.includes('/login') || location.pathname.includes('/signup');
   const isAdminLoginPage = location.pathname === '/admin/login';
