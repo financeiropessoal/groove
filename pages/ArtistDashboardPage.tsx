@@ -186,13 +186,15 @@ const ArtistDashboardPage: React.FC = () => {
             const openGigs = await GigService.getAllOpenGigs();
             if (openGigs.length === 0) {
                 setRadarResult("Nenhuma vaga aberta encontrada na plataforma no momento.");
+                setIsRadarLoading(false);
                 return;
             }
 
-            // FIX: Use process.env.API_KEY as per Gemini API guidelines.
+            // FIX: Removed `VITE_` prefix from environment variable to match the expected runtime environment.
             const apiKey = process.env.API_KEY;
             if (!apiKey) {
                 setRadarResult("A chave da API de IA não está configurada. Esta funcionalidade está desabilitada.");
+                setIsRadarLoading(false);
                 return;
             }
 

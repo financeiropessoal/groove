@@ -140,26 +140,36 @@ export const VenueAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     });
     
     if (signInError) {
-      if (signInError.message === 'Email not confirmed') {
-          return { success: false, message: 'Seu email ainda não foi confirmado. Verifique sua caixa de entrada e o spam.' };
-      }
-      return { success: false, message: 'Email ou senha incorretos.' };
+        console.error("ERRO REAL DO SUPABASE (Venue Login):", signInError.message); 
+        if (signInError.message === 'Email not confirmed') {
+            return { success: false, message: 'Seu email ainda não foi confirmado. Verifique sua caixa de entrada e o spam.' };
+        }
+        return { success: false, message: 'Email ou senha incorretos. Verifique suas credenciais.' };
     }
 
     if (sessionData.user) {
-        const { data: profile } = await supabase
-            .from('venues')
-            .select('status')
-            .eq('id', sessionData.user.id)
-            .single();
-        
-        if (profile?.status === 'blocked') {
+        try {
+            const { data: profile, error: profileError } = await supabase
+                .from('venues')
+                .select('status')
+                .eq('id', sessionData.user.id)
+                .single();
+
+            if (profileError && profileError.code !== 'PGRST116') {
+                throw profileError;
+            }
+            
+            if (profile?.status === 'blocked') {
+                await supabase.auth.signOut();
+                return { success: false, message: 'Sua conta foi bloqueada. Entre em contato com o suporte.' };
+            }
+        } catch(error: any) {
+            console.error("Erro ao verificar o perfil do contratante:", error);
             await supabase.auth.signOut();
-            return { success: false, message: 'Sua conta foi bloqueada. Entre em contato com o suporte.' };
+            return { success: false, message: 'Ocorreu um erro ao verificar seu perfil. Tente novamente mais tarde.' };
         }
     }
 
-    // onAuthStateChange will handle setting the user/profile
     return { success: true };
   };
 

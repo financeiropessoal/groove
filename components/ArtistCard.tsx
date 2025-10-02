@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Artist } from '../data';
 import StarRatingDisplay from './StarRatingDisplay';
 
@@ -50,4 +50,4 @@ const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onSelect }) => {
   );
 };
 
-export default React.memo(ArtistCard);
+export default memo(ArtistCard);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Venue } from '../data';
 import StarRatingDisplay from './StarRatingDisplay';
 
@@ -45,4 +45,4 @@ const VenueCard: React.FC<VenueCardProps> = ({ venue, onSelect }) => {
   );
 };
 
-export default React.memo(VenueCard);
+export default memo(VenueCard);

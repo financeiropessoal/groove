@@ -1,3 +1,16 @@
+// FIX: Removed the `VITE_` prefix from environment variable names. The execution environment likely exposes them directly (e.g., `API_KEY` instead of `VITE_API_KEY`), which was causing them to be undefined at runtime.
+declare global {
+  namespace NodeJS {
+    interface ProcessEnv {
+      readonly SUPABASE_URL: string;
+      readonly SUPABASE_ANON_KEY: string;
+      readonly ADMIN_EMAIL: string;
+      readonly ADMIN_PASSWORD: string;
+      readonly API_KEY: string;
+    }
+  }
+}
+
 export interface Notification {
   id: string;
   type: 'booking' | 'reminder' | 'payment' | 'tip' | 'offer' | 'gig_booked';

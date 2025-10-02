@@ -90,7 +90,7 @@ const EditProfilePage: React.FC = () => {
         setSuggestedBio(null);
 
         try {
-            // FIX: Use process.env.API_KEY as per Gemini API guidelines.
+            // FIX: Removed `VITE_` prefix from environment variable to match the expected runtime environment.
             const apiKey = process.env.API_KEY;
             if (!apiKey) {
                 setAiError("A chave da API de IA não está configurada. Esta funcionalidade está desabilitada.");

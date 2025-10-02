@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 interface StarRatingDisplayProps {
   rating: number;
@@ -24,4 +24,4 @@ const StarRatingDisplay: React.FC<StarRatingDisplayProps> = ({ rating, totalStar
   );
 };
 
-export default StarRatingDisplay;
+export default memo(StarRatingDisplay);

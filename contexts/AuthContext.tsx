@@ -31,8 +31,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const ADMIN_EMAIL = process.env.VITE_ADMIN_EMAIL;
-const ADMIN_PASSWORD = process.env.VITE_ADMIN_PASSWORD;
+// FIX: Removed `VITE_` prefix from environment variables to match the expected runtime environment.
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -155,26 +156,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
     
     if (signInError) {
+      console.error("ERRO REAL DO SUPABASE:", signInError.message); 
       if (signInError.message === 'Email not confirmed') {
           return { success: false, message: 'Seu email ainda não foi confirmado. Verifique sua caixa de entrada e o spam.' };
       }
-      return { success: false, message: 'Email ou senha incorretos.' };
+      return { success: false, message: 'Email ou senha incorretos. Verifique suas credenciais.' };
     }
 
     if (sessionData.user) {
-        const { data: profile } = await supabase
-            .from('artists')
-            .select('status')
-            .eq('id', sessionData.user.id)
-            .single();
-        
-        if (profile?.status === 'blocked') {
-            await supabase.auth.signOut(); // Immediately sign out the blocked user
-            return { success: false, message: 'Sua conta foi bloqueada. Entre em contato com o suporte.' };
+        try {
+            const { data: profile, error: profileError } = await supabase
+                .from('artists')
+                .select('status')
+                .eq('id', sessionData.user.id)
+                .single();
+            
+            if (profileError && profileError.code !== 'PGRST116') {
+                throw profileError;
+            }
+
+            if (profile?.status === 'blocked') {
+                await supabase.auth.signOut();
+                return { success: false, message: 'Sua conta foi bloqueada. Entre em contato com o suporte.' };
+            }
+        } catch (error: any) {
+             console.error("Erro ao verificar o perfil do artista:", error);
+             await supabase.auth.signOut();
+             return { success: false, message: 'Ocorreu um erro ao verificar seu perfil. Tente novamente mais tarde.' };
         }
     }
     
-    // onAuthStateChange will handle setting the user and profile
     return { success: true };
   };
 
@@ -215,7 +226,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const adminLogin = async (email: string, pass: string): Promise<boolean> => {
      await new Promise(resolve => setTimeout(resolve, 500));
      if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
-        console.error("Credenciais de admin não configuradas no ambiente. Defina VITE_ADMIN_EMAIL e VITE_ADMIN_PASSWORD.");
+        console.error("Credenciais de admin não configuradas no ambiente. Defina ADMIN_EMAIL e ADMIN_PASSWORD.");
         return false;
      }
      if(email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_PASSWORD) {
