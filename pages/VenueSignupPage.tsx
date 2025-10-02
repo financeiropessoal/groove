@@ -81,7 +81,13 @@ const VenueSignupPage: React.FC = () => {
                 setIsLoading(true);
             }
         } else {
-             setErrors({ form: result.error || "Não foi possível realizar o cadastro. Tente novamente." });
+            let userFriendlyError = result.error || "Não foi possível realizar o cadastro. Tente novamente.";
+            if (userFriendlyError.includes("User already registered")) {
+                userFriendlyError = "Este e-mail já está em uso. Tente fazer login ou use um e-mail diferente.";
+            } else if (userFriendlyError.toLowerCase().includes("failed to fetch")) {
+                userFriendlyError = "Falha na comunicação com o servidor. Verifique sua conexão com a internet e se a configuração do banco de dados está correta.";
+            }
+            setErrors({ form: userFriendlyError });
         }
     };
 

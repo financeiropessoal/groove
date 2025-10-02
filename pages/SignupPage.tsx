@@ -85,7 +85,17 @@ const SignupPage: React.FC = () => {
                 setIsLoading(true); 
             }
         } else {
-            setErrors({ form: result.error || "Não foi possível realizar o cadastro. Tente novamente." });
+            let userFriendlyError = result.error || "Não foi possível realizar o cadastro. Tente novamente.";
+
+            if (userFriendlyError.includes("User already registered")) {
+                userFriendlyError = "Não foi possível realizar o cadastro. Verifique se o e-mail já está em uso.";
+            } else if (userFriendlyError.includes("Password should be at least")) {
+                userFriendlyError = "Sua senha é muito fraca. A senha deve ter no mínimo 8 caracteres.";
+            } else if (userFriendlyError.toLowerCase().includes("failed to fetch")) {
+                userFriendlyError = "Falha na comunicação com o servidor. Verifique sua conexão com a internet e se a configuração do banco de dados está correta.";
+            }
+            
+            setErrors({ form: userFriendlyError });
         }
     };
 

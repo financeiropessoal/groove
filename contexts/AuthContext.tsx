@@ -32,8 +32,10 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // FIX: Switched to import.meta.env with VITE_ prefix, the correct way for Vite apps.
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL;
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
+// ADDED FALLBACKS: Added placeholder values for the preview environment.
+// FIX: Re-added optional chaining (`?.`) to prevent runtime errors when `import.meta.env` is undefined.
+const ADMIN_EMAIL = import.meta?.env?.VITE_ADMIN_EMAIL || "admin@example.com";
+const ADMIN_PASSWORD = import.meta?.env?.VITE_ADMIN_PASSWORD || "password";
 
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -156,7 +158,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
     
     if (signInError) {
-      console.error("ERRO REAL DO SUPABASE:", signInError.message); 
+      console.error("ERRO REAL DO SUPABASE (Artist Login):", signInError.message); 
+      if (signInError.message.toLowerCase().includes('failed to fetch')) {
+          return { success: false, message: 'Falha na comunicação com o servidor. Verifique sua conexão.' };
+      }
       if (signInError.message === 'Email not confirmed') {
           return { success: false, message: 'Seu email ainda não foi confirmado. Verifique sua caixa de entrada e o spam.' };
       }
@@ -207,7 +212,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     if (signUpError) {
-        return { success: false, error: "Não foi possível realizar o cadastro. Verifique se o e-mail já está em uso." };
+        console.error("Supabase signup error:", signUpError);
+        return { success: false, error: signUpError.message };
     }
     
     const requiresConfirmation = !data.session;

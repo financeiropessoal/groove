@@ -141,6 +141,9 @@ export const VenueAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
     
     if (signInError) {
         console.error("ERRO REAL DO SUPABASE (Venue Login):", signInError.message); 
+        if (signInError.message.toLowerCase().includes('failed to fetch')) {
+            return { success: false, message: 'Falha na comunicação com o servidor. Verifique sua conexão.' };
+        }
         if (signInError.message === 'Email not confirmed') {
             return { success: false, message: 'Seu email ainda não foi confirmado. Verifique sua caixa de entrada e o spam.' };
         }
@@ -201,7 +204,8 @@ export const VenueAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
       });
 
       if (signUpError) {
-          return { success: false, error: "Não foi possível realizar o cadastro. Verifique se o e-mail já está em uso." };
+          console.error("Supabase venue signup error:", signUpError);
+          return { success: false, error: signUpError.message };
       }
        if (!data.user) {
           return { success: false, error: "Ocorreu um erro desconhecido durante o cadastro." };

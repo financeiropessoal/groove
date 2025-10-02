@@ -1,3 +1,17 @@
+// FIX: Correctly define types for `import.meta.env` to resolve compilation errors.
+// Since this file is a module (due to `export`), we must use `declare global` 
+// to augment the global `ImportMeta` interface for the entire project.
+declare global {
+  interface ImportMeta {
+    readonly env: {
+      readonly VITE_ADMIN_EMAIL: string;
+      readonly VITE_ADMIN_PASSWORD: string;
+      readonly VITE_API_KEY: string;
+      readonly VITE_SUPABASE_URL: string;
+      readonly VITE_SUPABASE_ANON_KEY: string;
+    };
+  }
+}
 
 export interface Notification {
   id: string;

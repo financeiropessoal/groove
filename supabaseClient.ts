@@ -1,34 +1,44 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-// FIX: Definite assignment assertions are used because initialization happens inside a try-catch block.
-// This tells TypeScript that the variables will be assigned before use, even if it can't verify it.
 let supabase: SupabaseClient;
 let isSupabaseConfigured: boolean;
 
+const placeholderUrl = "https://placeholder.supabase.co";
+
 try {
-  // FIX: Switched to import.meta.env with VITE_ prefix, the correct way for Vite apps.
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const supabaseUrl = import.meta?.env?.VITE_SUPABASE_URL || placeholderUrl;
+  const supabaseKey = import.meta?.env?.VITE_SUPABASE_ANON_KEY || "ey-placeholder-key";
   
-  // Verificação de segurança: garantir que as variáveis existam
   if (!supabaseUrl || !supabaseKey) {
-    // This error will be caught by the try-catch block
     throw new Error("Variáveis de ambiente do Supabase não encontradas.");
   }
   
   supabase = createClient(supabaseUrl, supabaseKey);
-  isSupabaseConfigured = true;
+  
+  // If we are using placeholder credentials, the app is not truly configured.
+  // This prevents network errors in preview environments.
+  if (supabaseUrl === placeholderUrl) {
+      isSupabaseConfigured = false;
+      console.warn(
+`************************************************************
+*** ATENÇÃO: USANDO CREDENCIAIS DE EXEMPLO DO SUPABASE! ***
+*** A aplicação está rodando em modo de simulação.       ***
+*** Todas as operações de banco de dados serão puladas.  ***
+************************************************************`
+      );
+  } else {
+      isSupabaseConfigured = true;
+  }
 
 } catch (e: any) {
     const errorMessage = "A aplicação não está conectada a um banco de dados. Verifique a configuração.";
     console.error(
   `************************************************************
-  *** ATENÇÃO: VARIÁVEIS DE AMBIENTE DO SUPABASE NÃO ENCONTRADAS! ***
+  *** ERRO: FALHA AO INICIALIZAR O SUPABASE!             ***
   *** ${errorMessage}                               ***
   *** Verifique seu arquivo .env ou as configurações de deploy. ***
   ************************************************************`
     );
-    // Set the flag to false so the rest of the app knows Supabase is not available.
     isSupabaseConfigured = false;
     // NOTE: We don't re-throw the error, allowing the app to load in a degraded state.
     // To satisfy TypeScript's strict initialization, we assign a dummy object to supabase.
@@ -36,5 +46,4 @@ try {
     supabase = {} as SupabaseClient;
 }
 
-// FIX: Exports are now outside the try-catch, providing a consistent module interface.
 export { supabase, isSupabaseConfigured };

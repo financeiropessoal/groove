@@ -191,8 +191,10 @@ const ArtistDashboardPage: React.FC = () => {
             }
 
             // FIX: Switched to import.meta.env with VITE_ prefix, the correct way for Vite apps.
-            const apiKey = import.meta.env.VITE_API_KEY;
-            if (!apiKey) {
+            // ADDED FALLBACK: Added a placeholder value for the preview environment.
+            // FIX: Re-added optional chaining (`?.`) to prevent runtime errors when `import.meta.env` is undefined.
+            const apiKey = import.meta?.env?.VITE_API_KEY || "placeholder_api_key";
+            if (!apiKey || apiKey === "placeholder_api_key") {
                 setRadarResult("A chave da API de IA não está configurada. Esta funcionalidade está desabilitada.");
                 setIsRadarLoading(false);
                 return;
