@@ -11,6 +11,8 @@ import { useToast } from '../contexts/ToastContext';
 import OnboardingModal from '../components/OnboardingModal';
 import ReportProblemModal from '../components/ReportProblemModal';
 import { EnrichedBooking } from '../services/BookingService';
+import { FavoriteService } from '../services/FavoriteService';
+import ArtistCard from '../components/ArtistCard';
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: string; link?: string; linkText?: string; }> = ({ title, value, icon, link, linkText }) => (
     <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
@@ -45,6 +47,7 @@ const VenueDashboardPage: React.FC = () => {
     const [showRatingModal, setShowRatingModal] = useState(false);
     const [itemToRate, setItemToRate] = useState<{ gig: EnrichedGig, artist: Artist } | null>(null);
     const [showOnboarding, setShowOnboarding] = useState(false);
+    const [favoriteArtists, setFavoriteArtists] = useState<Artist[]>([]);
     
     const [showReportModal, setShowReportModal] = useState(false);
     // FIX: Use a state that holds an object compatible with the modal's expected props.
@@ -52,22 +55,24 @@ const VenueDashboardPage: React.FC = () => {
 
 
     const fetchData = async () => {
-        if (currentVenue) {
+        if (currentVenue && authUser) {
             setIsLoading(true);
-            const [venueGigs, venueRatings, venueGigsToRate] = await Promise.all([
+            const [venueGigs, venueRatings, venueGigsToRate, fetchedFavorites] = await Promise.all([
                 GigService.getGigsForVenue(currentVenue.id),
                 RatingService.getRatingsForUser(currentVenue.id, 'venue'),
                 RatingService.getGigsToRate(currentVenue.id, 'venue'),
+                FavoriteService.getEnrichedFavoritesForVenue(authUser.id),
             ]);
             setGigs(venueGigs.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
             setRatings(venueRatings);
             setGigsToRate(venueGigsToRate as EnrichedGig[]);
+            setFavoriteArtists(fetchedFavorites);
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        if (!currentVenue) {
+        if (!currentVenue || !authUser) {
             navigate('/venue-login');
             return;
         }
@@ -82,7 +87,7 @@ const VenueDashboardPage: React.FC = () => {
         }
 
         fetchData();
-    }, [currentVenue, navigate]);
+    }, [currentVenue, authUser, navigate]);
     
      const handleOnboardingComplete = () => {
         if (currentVenue) {
@@ -130,6 +135,10 @@ const VenueDashboardPage: React.FC = () => {
             setItemToRate({ gig, artist: gig.artist });
             setShowRatingModal(true);
         }
+    };
+
+    const handleArtistClick = (artist: Artist) => {
+        navigate(`/artists/${artist.id}`);
     };
 
     const handleRatingSubmit = async (rating: number, comment: string) => {
@@ -219,6 +228,23 @@ const VenueDashboardPage: React.FC = () => {
                     <StatCard title="Shows Realizados" value={stats.totalShows} icon="fa-calendar-check" />
                     <StatCard title="Vagas em Aberto" value={openGigs.length} icon="fa-bullhorn" link="/offer-gig" linkText="Publicar Nova" />
                     <StatCard title="Sua Avaliação Média" value={averageRating} icon="fa-star" />
+                </section>
+
+                <section>
+                    <h3 className="text-2xl font-bold text-white mb-4">Seus Artistas Favoritos</h3>
+                    {favoriteArtists.length > 0 ? (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            {favoriteArtists.map(artist => (
+                                <ArtistCard key={artist.id} artist={artist} onSelect={handleArtistClick} />
+                            ))}
+                        </div>
+                    ) : (
+                        <EmptyState 
+                            icon="fa-star" 
+                            title="Nenhum artista favorito"
+                            message="Quando você favoritar um artista, ele aparecerá aqui para acesso rápido."
+                        />
+                    )}
                 </section>
 
                 <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">

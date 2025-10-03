@@ -14,6 +14,8 @@ import { Rating } from '../types';
 import RatingModal from '../components/RatingModal';
 import { useToast } from '../contexts/ToastContext';
 import ReportProblemModal from '../components/ReportProblemModal';
+import { FavoriteService } from '../services/FavoriteService';
+import VenueCard from '../components/VenueCard';
 
 const StatCard: React.FC<{ title: string; value: string | number; icon: string; link?: string; linkText?: string }> = ({ title, value, icon, link, linkText }) => (
     <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
@@ -51,6 +53,7 @@ const ArtistDashboardPage: React.FC = () => {
     const [radarResult, setRadarResult] = useState<string>('');
     const [showRadarResult, setShowRadarResult] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
+    const [favoriteVenues, setFavoriteVenues] = useState<Venue[]>([]);
     
     const [showRatingModal, setShowRatingModal] = useState(false);
     const [itemToRate, setItemToRate] = useState<{ gig: EnrichedGig, venue: Venue } | null>(null);
@@ -59,25 +62,27 @@ const ArtistDashboardPage: React.FC = () => {
     const [bookingToReport, setBookingToReport] = useState<EnrichedBooking | null>(null);
 
     const fetchData = async () => {
-        if (!artist) return;
+        if (!artist || !authUser) return;
         setIsLoading(true);
-        const [fetchedBookings, fetchedOffers, fetchedRevenue, fetchedRatings, fetchedGigsToRate] = await Promise.all([
+        const [fetchedBookings, fetchedOffers, fetchedRevenue, fetchedRatings, fetchedGigsToRate, fetchedFavorites] = await Promise.all([
             BookingService.getEnrichedBookingsForArtist(artist.id),
             DirectOfferService.getPendingOffersForArtist(artist.id),
             BookingService.getArtistRevenueLast30Days(artist.id),
             RatingService.getRatingsForUser(artist.id, 'artist'),
-            RatingService.getGigsToRate(artist.id, 'artist')
+            RatingService.getGigsToRate(artist.id, 'artist'),
+            FavoriteService.getEnrichedFavoritesForArtist(authUser.id)
         ]);
         setBookings(fetchedBookings.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         setOffers(fetchedOffers);
         setRevenueLast30d(fetchedRevenue);
         setRatings(fetchedRatings);
         setGigsToRate(fetchedGigsToRate as EnrichedGig[]);
+        setFavoriteVenues(fetchedFavorites);
         setIsLoading(false);
     };
 
     useEffect(() => {
-        if (!artist) {
+        if (!artist || !authUser) {
             return;
         }
 
@@ -91,7 +96,7 @@ const ArtistDashboardPage: React.FC = () => {
         }
 
         fetchData();
-    }, [artist, navigate]);
+    }, [artist, authUser, navigate]);
 
     const handleOnboardingComplete = () => {
         if (artist) {
@@ -132,6 +137,10 @@ const ArtistDashboardPage: React.FC = () => {
     const handleOpenReportModal = (booking: EnrichedBooking) => {
         setBookingToReport(booking);
         setShowReportModal(true);
+    };
+
+    const handleVenueClick = (venue: Venue) => {
+        navigate(`/venues/${venue.id}`);
     };
 
     const averageRating = useMemo(() => {
@@ -305,6 +314,17 @@ const ArtistDashboardPage: React.FC = () => {
                                 </Link>
                             </div>
                         </div>
+                        
+                        {favoriteVenues.length > 0 && (
+                            <div>
+                                <h3 className="text-2xl font-bold text-white mb-4">Seus Locais Favoritos</h3>
+                                <div className="space-y-4">
+                                    {favoriteVenues.slice(0, 3).map(venue => (
+                                        <VenueCard key={venue.id} venue={venue} onSelect={handleVenueClick} />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {gigsToRate.length > 0 && (
                             <div>

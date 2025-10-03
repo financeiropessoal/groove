@@ -4,6 +4,8 @@ import { GigService } from '../services/GigService';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import StarRatingDisplay from './StarRatingDisplay';
+import { FavoriteService } from '../services/FavoriteService';
+import { useToast } from '../contexts/ToastContext';
 
 interface VenueDetailPanelProps {
   venue: Venue;
@@ -16,8 +18,25 @@ const VenueDetailPanel: React.FC<VenueDetailPanelProps> = ({ venue, onClose }) =
   const [activeTab, setActiveTab] = useState<Tab>('sobre');
   const [openGigs, setOpenGigs] = useState<GigOffer[]>([]);
   const [isLoadingGigs, setIsLoadingGigs] = useState(false);
-  const { isAuthenticated: isArtistAuthenticated } = useAuth();
+  const { isAuthenticated: isArtistAuthenticated, authUser: artistAuthUser } = useAuth();
+  const { showToast } = useToast();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(true);
 
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+        if (isArtistAuthenticated && artistAuthUser) {
+            setIsFavoriteLoading(true);
+            const status = await FavoriteService.isFavorite(artistAuthUser.id, venue.id);
+            setIsFavorite(status);
+            setIsFavoriteLoading(false);
+        } else {
+            setIsFavorite(false);
+            setIsFavoriteLoading(false);
+        }
+    };
+    checkFavoriteStatus();
+}, [venue.id, isArtistAuthenticated, artistAuthUser]);
 
   useEffect(() => {
     const fetchGigs = async () => {
@@ -36,6 +55,24 @@ const VenueDetailPanel: React.FC<VenueDetailPanelProps> = ({ venue, onClose }) =
     };
     fetchGigs();
   }, [activeTab, venue.id]);
+
+  const handleToggleFavorite = async () => {
+    if (!isArtistAuthenticated || !artistAuthUser) {
+        showToast('Você precisa estar logado como artista para favoritar locais.', 'info');
+        return;
+    }
+    setIsFavoriteLoading(true);
+    if (isFavorite) {
+        await FavoriteService.removeFavorite(artistAuthUser.id, venue.id);
+        setIsFavorite(false);
+        showToast('Local removido dos favoritos.', 'info');
+    } else {
+        await FavoriteService.addFavorite(artistAuthUser.id, venue.id);
+        setIsFavorite(true);
+        showToast('Local adicionado aos favoritos!', 'success');
+    }
+    setIsFavoriteLoading(false);
+  };
 
   const TabButton: React.FC<{tab: Tab, label: string, icon: string, disabled?: boolean}> = ({ tab, label, icon, disabled }) => (
     <button
@@ -62,7 +99,20 @@ const VenueDetailPanel: React.FC<VenueDetailPanelProps> = ({ venue, onClose }) =
                 </button>
           </div>
           <div className="absolute bottom-0 left-0 p-6">
-              <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">{venue.name}</h1>
+              <div className="flex items-center gap-4">
+                <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-lg">{venue.name}</h1>
+                 {isArtistAuthenticated && (
+                    <button onClick={handleToggleFavorite} disabled={isFavoriteLoading} className="text-2xl transition-colors duration-200 mt-2">
+                        {isFavoriteLoading ? (
+                            <i className="fas fa-spinner fa-spin text-gray-400"></i>
+                        ) : isFavorite ? (
+                            <i className="fas fa-star text-yellow-400 hover:text-yellow-300" title="Remover dos Favoritos"></i>
+                        ) : (
+                            <i className="far fa-star text-gray-400 hover:text-yellow-400" title="Adicionar aos Favoritos"></i>
+                        )}
+                    </button>
+                )}
+              </div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4 mt-1">
                 <p className="text-lg text-gray-200 drop-shadow-md"><i className="fas fa-map-marker-alt mr-2 text-red-400"></i>{venue.address}</p>
                 {venue.averageRating && typeof venue.averageRating === 'number' && venue.ratingCount ? (

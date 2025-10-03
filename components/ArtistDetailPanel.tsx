@@ -10,6 +10,7 @@ import DirectOfferModal from './DirectOfferModal';
 import { ChatService } from '../services/ChatService';
 import { useToast } from '../contexts/ToastContext';
 import StarRatingDisplay from './StarRatingDisplay';
+import { FavoriteService } from '../services/FavoriteService';
 
 
 interface ArtistDetailPanelProps {
@@ -21,7 +22,7 @@ type Tab = 'about' | 'plans' | 'repertoire' | 'gallery' | 'tech' | 'hospitality'
 
 const ArtistDetailPanel: React.FC<ArtistDetailPanelProps> = ({ artist, onClose }) => {
   const navigate = useNavigate();
-  const { isAuthenticated: isVenueAuthenticated, currentVenue } = useVenueAuth();
+  const { isAuthenticated: isVenueAuthenticated, currentVenue, authUser: venueAuthUser } = useVenueAuth();
   const { showToast } = useToast();
   const [selectedDates, setSelectedDates] = useState<Date[]>([]);
   const [repertoireSearch, setRepertoireSearch] = useState('');
@@ -31,9 +32,26 @@ const ArtistDetailPanel: React.FC<ArtistDetailPanelProps> = ({ artist, onClose }
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [showDirectOfferModal, setShowDirectOfferModal] = useState(false);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(true);
   
   const contentRef = useRef<HTMLDivElement>(null);
   
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+        if (isVenueAuthenticated && venueAuthUser) {
+            setIsFavoriteLoading(true);
+            const status = await FavoriteService.isFavorite(venueAuthUser.id, artist.id);
+            setIsFavorite(status);
+            setIsFavoriteLoading(false);
+        } else {
+            setIsFavorite(false);
+            setIsFavoriteLoading(false);
+        }
+    };
+    checkFavoriteStatus();
+  }, [artist.id, isVenueAuthenticated, venueAuthUser]);
+
   const bookedDates = useMemo(() => {
     if (!artist?.bookedDates) return [];
     return artist.bookedDates.map(d => new Date(`${d}T00:00:00`));
@@ -96,6 +114,25 @@ const ArtistDetailPanel: React.FC<ArtistDetailPanelProps> = ({ artist, onClose }
     } finally {
       setIsCreatingChat(false);
     }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!isVenueAuthenticated || !venueAuthUser) {
+        setShowAuthPrompt(true);
+        return;
+    }
+
+    setIsFavoriteLoading(true);
+    if (isFavorite) {
+        await FavoriteService.removeFavorite(venueAuthUser.id, artist.id);
+        setIsFavorite(false);
+        showToast('Artista removido dos favoritos.', 'info');
+    } else {
+        await FavoriteService.addFavorite(venueAuthUser.id, artist.id);
+        setIsFavorite(true);
+        showToast('Artista adicionado aos favoritos!', 'success');
+    }
+    setIsFavoriteLoading(false);
   };
   
   const scrollToTop = () => {
@@ -349,11 +386,16 @@ const ArtistDetailPanel: React.FC<ArtistDetailPanelProps> = ({ artist, onClose }
                        <div className="mt-6 space-y-3">
                             <button disabled={selectedDates.length === 0} onClick={handleBookingRequest} className="w-full bg-red-600 text-white font-bold py-3 px-6 rounded-lg transition-colors hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:text-gray-400">Selecionar Pacote</button>
                             <div className="flex gap-3">
-                                <button onClick={handleDirectOffer} className="w-full bg-transparent border-2 border-red-500 text-red-400 font-bold py-2.5 px-4 rounded-lg transition-colors hover:bg-red-500 hover:text-white">
+                                <button onClick={handleDirectOffer} className="flex-1 bg-transparent border-2 border-red-500 text-red-400 font-bold py-2.5 px-4 rounded-lg transition-colors hover:bg-red-500 hover:text-white">
                                     Proposta Direta
                                 </button>
-                                <button onClick={handleSendMessageClick} disabled={isCreatingChat} className="w-full bg-gray-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors hover:bg-gray-500 flex items-center justify-center gap-2 disabled:opacity-50">
+                                <button onClick={handleSendMessageClick} disabled={isCreatingChat} className="flex-1 bg-gray-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors hover:bg-gray-500 flex items-center justify-center gap-2 disabled:opacity-50">
                                     {isCreatingChat ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-comment-dots"></i> <span>Mensagem</span></>}
+                                </button>
+                                <button onClick={handleToggleFavorite} disabled={isFavoriteLoading || !isVenueAuthenticated} title={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'} className="w-14 flex-shrink-0 bg-gray-600 text-white font-bold py-2.5 px-4 rounded-lg transition-colors hover:bg-gray-500 flex items-center justify-center gap-2 disabled:opacity-50">
+                                  {isFavoriteLoading ? <i className="fas fa-spinner fa-spin"></i> : (
+                                    isFavorite ? <i className="fas fa-star text-yellow-400"></i> : <i className="far fa-star"></i>
+                                  )}
                                 </button>
                             </div>
                         </div>
