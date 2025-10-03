@@ -52,6 +52,7 @@ const Header: React.FC = () => {
     fetchNotifications();
     fetchUnreadMessages();
     
+    // FIX: Prevent Supabase real-time subscription if not configured, which causes a crash.
     if (!isSupabaseConfigured) return;
 
     // Realtime subscription for messages

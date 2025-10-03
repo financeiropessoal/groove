@@ -7,9 +7,11 @@ import ArtistDetailPanel from './ArtistDetailPanel';
 import { Artist } from '../data';
 import { ArtistService } from '../services/ArtistService';
 import SlidingPanel from './SlidingPanel';
+import Pagination from './Pagination';
 
 
 type SortOrder = 'default' | 'name-asc' | 'name-desc' | 'genre-asc' | 'genre-desc';
+const ITEMS_PER_PAGE = 12;
 
 const ArtistGrid: React.FC = () => {
   const [allArtists, setAllArtists] = useState<Artist[]>([]);
@@ -19,6 +21,7 @@ const ArtistGrid: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('default');
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   
   const params = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -94,12 +97,23 @@ const ArtistGrid: React.FC = () => {
     return sortedAndFilteredArtists;
 
   }, [allArtists, searchTerm, selectedGenre, selectedDate, sortOrder]);
+  
+  const paginatedArtists = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredArtists.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredArtists, currentPage]);
+
+  const handleFilterChange = (setter: React.Dispatch<React.SetStateAction<any>>) => (value: any) => {
+      setter(value);
+      setCurrentPage(1);
+  };
 
   const handleClearFilters = () => {
     setSearchTerm('');
     setSelectedGenre('Todos');
     setSelectedDate('');
     setSortOrder('default');
+    setCurrentPage(1);
   };
 
   const handleApplyModalFilters = (filters: {
@@ -113,6 +127,7 @@ const ArtistGrid: React.FC = () => {
     setSelectedDate(filters.selectedDate);
     setSortOrder(filters.sortOrder);
     setIsFilterModalOpen(false);
+    setCurrentPage(1);
   };
 
 
@@ -143,7 +158,7 @@ const ArtistGrid: React.FC = () => {
                     type="text"
                     placeholder="Buscar por nome do artista..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => handleFilterChange(setSearchTerm)(e.target.value)}
                     className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
                     aria-label="Buscar artista por nome"
                 />
@@ -154,7 +169,7 @@ const ArtistGrid: React.FC = () => {
             <div className="relative w-auto min-w-48">
                 <select
                     value={selectedGenre}
-                    onChange={(e) => setSelectedGenre(e.target.value)}
+                    onChange={(e) => handleFilterChange(setSelectedGenre)(e.target.value)}
                     className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-red-500 appearance-none transition-colors"
                     aria-label="Filtrar por gênero"
                 >
@@ -170,7 +185,7 @@ const ArtistGrid: React.FC = () => {
                  <input
                     type="date"
                     value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
+                    onChange={(e) => handleFilterChange(setSelectedDate)(e.target.value)}
                     min={today}
                     className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
                     aria-label="Filtrar por data de disponibilidade"
@@ -179,7 +194,7 @@ const ArtistGrid: React.FC = () => {
              <div className="relative w-auto min-w-48">
                 <select
                     value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+                    onChange={(e) => handleFilterChange(setSortOrder)(e.target.value as SortOrder)}
                     className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-red-500 appearance-none transition-colors"
                     aria-label="Ordenar artistas"
                 >
@@ -229,11 +244,19 @@ const ArtistGrid: React.FC = () => {
             <p className="text-gray-300 mt-4">Carregando artistas...</p>
         </div>
       ) : hasArtists ? (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-8">
-            {filteredArtists.map(artist => (
-                <ArtistCard key={artist.id} artist={artist} onSelect={handleSelectArtist} />
-            ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-8">
+              {paginatedArtists.map(artist => (
+                  <ArtistCard key={artist.id} artist={artist} onSelect={handleSelectArtist} />
+              ))}
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredArtists.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+          />
+        </>
       ) : (
         <div className="text-center py-12 bg-gray-800/50 rounded-lg">
           <p className="text-gray-300 text-lg font-semibold">Nenhum artista encontrado</p>

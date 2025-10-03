@@ -9,7 +9,7 @@ export class ArtistService {
             id: dbArtist.id,
             name: dbArtist.name,
             email: dbArtist.email,
-            phone: dbArtist.phone_number,
+            phone: dbArtist.phone,
             genre: dbArtist.genre || { primary: '', secondary: [] },
             imageUrl: dbArtist.image_url,
             youtubeVideoId: dbArtist.youtube_video_id,
@@ -31,7 +31,7 @@ export class ArtistService {
         return {
             name: artist.name,
             email: artist.email,
-            phone_number: artist.phone,
+            phone: artist.phone,
             genre: artist.genre,
             image_url: artist.imageUrl,
             youtube_video_id: artist.youtubeVideoId,

@@ -5,12 +5,16 @@ import VenueCard from './VenueCard';
 import VenueDetailPanel from './VenueDetailPanel';
 import { VenueService } from '../services/VenueService';
 import SlidingPanel from './SlidingPanel';
+import Pagination from './Pagination';
+
+const ITEMS_PER_PAGE = 5;
 
 const VenueList: React.FC = () => {
   const [venues, setVenues] = useState<Venue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStyle, setSelectedStyle] = useState('Todos');
+  const [currentPage, setCurrentPage] = useState(1);
   
   const params = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -54,6 +58,17 @@ const VenueList: React.FC = () => {
     return ['Todos', ...Array.from(allStyles).sort()];
   }, [venues]);
 
+  const handleFilterChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (value: string) => {
+      setter(value);
+      setCurrentPage(1);
+  };
+  
+  const handleClearFilters = () => {
+      setSearchTerm('');
+      setSelectedStyle('Todos');
+      setCurrentPage(1);
+  }
+
   const filteredVenues = useMemo(() => {
     return venues
       .filter(venue => {
@@ -67,6 +82,11 @@ const VenueList: React.FC = () => {
         return venue.musicStyles?.includes(selectedStyle);
       });
   }, [venues, searchTerm, selectedStyle]);
+
+  const paginatedVenues = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredVenues.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredVenues, currentPage]);
 
 
   return (
@@ -88,7 +108,7 @@ const VenueList: React.FC = () => {
                   type="text"
                   placeholder="Buscar por nome ou endereço..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleFilterChange(setSearchTerm)(e.target.value)}
                   className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
                   aria-label="Buscar local por nome ou endereço"
               />
@@ -99,7 +119,7 @@ const VenueList: React.FC = () => {
           <div className="relative w-full sm:w-auto sm:min-w-48">
               <select
                   value={selectedStyle}
-                  onChange={(e) => setSelectedStyle(e.target.value)}
+                  onChange={(e) => handleFilterChange(setSelectedStyle)(e.target.value)}
                   className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-red-500 appearance-none transition-colors"
                   aria-label="Filtrar por estilo musical"
               >
@@ -120,17 +140,25 @@ const VenueList: React.FC = () => {
             <p className="text-gray-300 mt-4">Carregando locais parceiros...</p>
         </div>
       ) : filteredVenues.length > 0 ? (
-        <div className="space-y-6">
-          {filteredVenues.map((venue) => (
-            <VenueCard key={venue.id} venue={venue} onSelect={handleSelectVenue} />
-          ))}
-        </div>
+        <>
+          <div className="space-y-6">
+            {paginatedVenues.map((venue) => (
+              <VenueCard key={venue.id} venue={venue} onSelect={handleSelectVenue} />
+            ))}
+          </div>
+          <Pagination
+            currentPage={currentPage}
+            totalItems={filteredVenues.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+            onPageChange={setCurrentPage}
+          />
+        </>
       ) : (
          <div className="text-center py-12 bg-gray-800/50 rounded-lg">
           <p className="text-gray-300 text-lg font-semibold">Nenhum local encontrado</p>
           <p className="text-gray-400 mt-2">Tente ajustar seus filtros de busca.</p>
            <button
-              onClick={() => { setSearchTerm(''); setSelectedStyle('Todos'); }}
+              onClick={handleClearFilters}
               className="mt-6 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-md transition-colors"
           >
               Limpar Filtros

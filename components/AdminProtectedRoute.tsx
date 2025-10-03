@@ -1,8 +1,8 @@
 import React from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const AdminProtectedRoute: React.FC = () => {
+const AdminProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAdminAuthenticated } = useAuth();
 
   if (!isAdminAuthenticated) {
@@ -10,8 +10,8 @@ const AdminProtectedRoute: React.FC = () => {
     return <Navigate to="/admin/login" replace />;
   }
 
-  // If authenticated, render the child routes.
-  return <Outlet />;
+  // If authenticated, render the child components.
+  return <>{children}</>;
 };
 
 export default AdminProtectedRoute;
