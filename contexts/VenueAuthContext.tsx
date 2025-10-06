@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Venue } from '../data';
 import { isSupabaseConfigured, supabase } from '../supabaseClient';
 import { VenueService } from '../services/VenueService';
-import { User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
+import { ProfileCompletenessService } from '../services/ProfileCompletenessService';
 
 export interface LoginResult {
   success: boolean;
@@ -21,7 +22,7 @@ interface VenueAuthContextType {
   currentVenue: Venue | null;
   authUser: User | null;
   login: (email: string, pass: string) => Promise<LoginResult>;
-  logout: () => void;
+  logout: () => Promise<void>;
   signup: (venueData: Partial<Venue>) => Promise<SignupResult>;
   updateVenueProfile: (updatedData: Partial<Venue>) => Promise<void>;
 }
@@ -33,158 +34,85 @@ export const VenueAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
-
+  
   useEffect(() => {
-    const createInitialProfile = async (user: User) => {
-      const name = user.user_metadata?.full_name;
-      const address = user.user_metadata?.address;
-      const phone = user.user_metadata?.phone_number;
-
-      if (!name || !address || !user.email) {
-        console.error('Cannot create venue profile, user metadata incomplete.');
-        setCurrentVenue(null);
+    if (!isSupabaseConfigured) {
+        setIsLoading(false);
         return;
-      }
+    }
 
-      const venuePayload = VenueService.mapVenueToDb({
-        name,
-        address,
-        email: user.email,
-        imageUrl:
-          'https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
-        status: 'active',
-        description: '',
-        musicStyles: [],
-        capacity: 0,
-        contact: { name: '', phone: phone || '' },
-        website: '',
-        socials: { instagram: '' },
-        proposalInfo: {
-          structure: { title: 'Estrutura Oferecida', details: [] },
-          audience: { title: 'Nosso Público', details: [] },
-        },
-        photos: [],
-        equipment: [],
-      });
-      const finalPayload = { ...venuePayload, id: user.id };
-
-      const { data: newProfile, error: insertError } = await supabase
-        .from('venues')
-        .insert(finalPayload)
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error(
-          'CRITICAL: RLS Error. Failed to create venue profile on login:',
-          insertError.message
-        );
-        setCurrentVenue(null);
-      } else {
-        setCurrentVenue(VenueService.mapVenueFromDb(newProfile));
-        sessionStorage.setItem('isNewUser', 'true');
-      }
-    };
-
-    if (isSupabaseConfigured) {
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange(async (event, session) => {
-        const user = session?.user ?? null;
-
-        if (user && user.user_metadata?.user_type === 'venue') {
-          const { data: profile, error: profileError } = await supabase
-            .from('venues')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-
-          if (profile?.status === 'blocked') {
-            await supabase.auth.signOut();
-            setAuthUser(null);
-            setCurrentVenue(null);
-          } else if (profile) {
-            setAuthUser(user);
-            setCurrentVenue(VenueService.mapVenueFromDb(profile));
-          } else if (profileError && profileError.code === 'PGRST116') {
-            await createInitialProfile(user);
-            setAuthUser(user);
-          } else if (profileError) {
-            console.error('Error fetching venue profile:', profileError.message);
-            setCurrentVenue(null);
-            setAuthUser(null);
-          }
-        } else {
-          setCurrentVenue(null);
-          setAuthUser(null);
+    const checkSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user && session.user.user_metadata?.user_type === 'venue') {
+            const venueProfile = await VenueService.getVenueById(session.user.id);
+            setAuthUser(session.user);
+            setCurrentVenue(venueProfile);
         }
         setIsLoading(false);
-      });
+    };
+    
+    checkSession();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        setIsLoading(true);
+        const sessionUser = session?.user;
+        if (sessionUser && sessionUser.user_metadata?.user_type === 'venue') {
+            if (sessionUser.id !== authUser?.id) {
+                const venueProfile = await VenueService.getVenueById(sessionUser.id);
+                setAuthUser(sessionUser);
+                setCurrentVenue(venueProfile);
+            }
+        } else if (!sessionUser && authUser?.user_metadata?.user_type === 'venue') {
+            setAuthUser(null);
+            setCurrentVenue(null);
+        }
+        setIsLoading(false);
+    });
 
-      return () => {
-        subscription.unsubscribe();
-      };
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
+    return () => {
+        authListener.subscription.unsubscribe();
+    };
+  }, [authUser]);
+
 
   const login = async (email: string, pass: string): Promise<LoginResult> => {
     if (!isSupabaseConfigured) {
-      return { success: false, message: "A funcionalidade de login está desabilitada." };
+        // Mock login for demo mode
+        const mockVenue: Venue = {
+            id: 'mock-venue-1',
+            name: 'Bar da Esquina (Mock)',
+            address: 'Rua das Flores, 123, Centro',
+            city: 'São Paulo',
+            imageUrl: 'https://images.pexels.com/photos/262047/pexels-photo-262047.jpeg',
+            email: 'contato@esquina.com',
+            contractor_type: 'company',
+            description: 'Um bar aconchegante com foco em música ao vivo e coquetéis artesanais. Perfeito para shows de MPB, Jazz e Bossa Nova.',
+            musicStyles: ['MPB', 'Jazz', 'Bossa Nova'],
+            capacity: 80,
+            averageRating: 4.7,
+            ratingCount: 42,
+            profile_completeness: { is_complete: true, missing_fields: [] },
+        };
+        const mockAuthUser: User = {
+            id: 'mock-venue-auth-user-id', app_metadata: {}, user_metadata: { user_type: 'venue' },
+            aud: 'authenticated', created_at: new Date().toISOString()
+        };
+        setCurrentVenue(mockVenue);
+        setAuthUser(mockAuthUser);
+        navigate('/venue-dashboard');
+        return { success: true };
     }
-
-    const { data: sessionData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: pass,
-    });
-    
-    if (signInError) {
-        console.error("ERRO REAL DO SUPABASE (Venue Login):", signInError.message); 
-        if (signInError.message.toLowerCase().includes('failed to fetch')) {
-            return { success: false, message: 'Falha na comunicação com o servidor. Verifique sua conexão.' };
-        }
-        if (signInError.message === 'Email not confirmed') {
-            return { success: false, message: 'Seu email ainda não foi confirmado. Verifique sua caixa de entrada e o spam.' };
-        }
-        return { success: false, message: 'Email ou senha incorretos. Verifique suas credenciais.' };
+    const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+    if (error) {
+        return { success: false, message: error.message };
     }
-
-    if (sessionData.user) {
-        // FIX: Verify user type before proceeding to prevent wrong user type login.
-        if (sessionData.user.user_metadata?.user_type !== 'venue') {
-            await supabase.auth.signOut();
-            return { success: false, message: 'Este e-mail pertence a um artista. Por favor, use a página de login para artistas.' };
-        }
-
-        try {
-            const { data: profile, error: profileError } = await supabase
-                .from('venues')
-                .select('status')
-                .eq('id', sessionData.user.id)
-                .single();
-
-            if (profileError && profileError.code !== 'PGRST116') {
-                throw profileError;
-            }
-            
-            if (profile?.status === 'blocked') {
-                await supabase.auth.signOut();
-                return { success: false, message: 'Sua conta foi bloqueada. Entre em contato com o suporte.' };
-            }
-        } catch(error: any) {
-            console.error("Erro ao verificar o perfil do contratante:", error);
-            await supabase.auth.signOut();
-            return { success: false, message: 'Ocorreu um erro ao verificar seu perfil. Tente novamente mais tarde.' };
-        }
-    }
-
+    // Auth state change listener will handle the rest
     return { success: true };
   };
 
   const logout = async () => {
     if (isSupabaseConfigured) {
-      await supabase.auth.signOut();
+        await supabase.auth.signOut();
     }
     setCurrentVenue(null);
     setAuthUser(null);
@@ -192,57 +120,73 @@ export const VenueAuthProvider: React.FC<{ children: ReactNode }> = ({ children 
   };
   
   const signup = async (venueData: Partial<Venue>): Promise<SignupResult> => {
-      if (!isSupabaseConfigured || !venueData.email || !venueData.password) {
-          return { success: false, error: "Dados de cadastro incompletos." };
+      if (!isSupabaseConfigured) {
+          alert("Cadastro desabilitado no modo de demonstração.");
+          return { success: false };
       }
-
-      const { data, error: signUpError } = await supabase.auth.signUp({
-          email: venueData.email,
-          password: venueData.password,
+      
+      const { data, error } = await supabase.auth.signUp({
+          email: venueData.email!,
+          password: venueData.password!,
           options: {
-              data: {
-                  full_name: venueData.name,
-                  address: venueData.address,
-                  phone_number: venueData.contact?.phone,
-                  user_type: 'venue'
-              }
+              data: { user_type: 'venue' }
           }
       });
 
-      if (signUpError) {
-          console.error("Supabase venue signup error:", signUpError);
-          return { success: false, error: signUpError.message };
+      if (error) return { success: false, error: error.message };
+
+      if (data.user) {
+          const { error: profileError } = await supabase.from('venues').insert({
+              id: data.user.id,
+              name: venueData.name,
+              email: venueData.email,
+              address: '',
+              city: venueData.city,
+              image_url: 'https://images.pexels.com/photos/1763075/pexels-photo-1763075.jpeg', // placeholder
+              status: 'active',
+              contractor_type: venueData.contractor_type,
+              profile_completeness: { is_complete: false, missing_fields: ['description', 'imageUrl', 'address', 'musicStyles'] }
+          });
+          if (profileError) {
+              console.error("Failed to create venue profile:", profileError.message);
+              return { success: false, error: "Falha ao criar o perfil do local." };
+          }
       }
-       if (!data.user) {
-          return { success: false, error: "Ocorreu um erro desconhecido durante o cadastro." };
-      }
-      
-      const requiresConfirmation = !data.session;
-      return { success: true, requiresConfirmation };
+
+      return { success: true, requiresConfirmation: data.session === null };
   };
 
   const updateVenueProfile = async (updatedData: Partial<Venue>) => {
-    if (!currentVenue || !isSupabaseConfigured) return;
-    
-    const updatedVenue = { ...currentVenue, ...updatedData };
-    const supabasePayload = VenueService.mapVenueToDb(updatedVenue);
+    if (!currentVenue || !authUser) return;
 
-    const { error } = await supabase
-      .from('venues')
-      .update(supabasePayload)
-      .eq('id', currentVenue.id);
+    if (!isSupabaseConfigured) {
+        const newProfile = { ...currentVenue, ...updatedData };
+        const completeness = ProfileCompletenessService.checkVenueCompleteness(newProfile);
+        setCurrentVenue({ ...newProfile, profile_completeness: completeness });
+        return;
+    }
 
-    if (error) {
-      console.error("Failed to update venue profile in Supabase:", error.message);
-      alert("Erro ao salvar o perfil. Tente novamente.");
+    const updatedVenue = await VenueService.updateVenue(authUser.id, updatedData);
+    if (updatedVenue) {
+         const completeness = ProfileCompletenessService.checkVenueCompleteness(updatedVenue);
+         const { error: completenessError } = await supabase
+            .from('venues')
+            .update({ profile_completeness: completeness })
+            .eq('id', authUser.id);
+
+        if (completenessError) {
+            console.error("Error updating venue completeness:", completenessError);
+        }
+        
+        setCurrentVenue({ ...updatedVenue, profile_completeness: completeness });
     } else {
-      setCurrentVenue(updatedVenue);
+        throw new Error("Failed to update venue profile");
     }
   };
 
   const value = { isAuthenticated: !!currentVenue, currentVenue, authUser, login, logout, signup, updateVenueProfile };
 
-  if (isLoading) {
+  if (isLoading && isSupabaseConfigured) {
       return (
           <div className="min-h-screen bg-gray-900 flex items-center justify-center">
             <i className="fas fa-spinner fa-spin text-4xl text-red-500"></i>

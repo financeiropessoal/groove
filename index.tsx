@@ -5,6 +5,7 @@ import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import { VenueAuthProvider } from './contexts/VenueAuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { MusicianAuthProvider } from './contexts/MusicianAuthContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -18,7 +19,9 @@ root.render(
       <ToastProvider>
         <AuthProvider>
           <VenueAuthProvider>
-            <App />
+            <MusicianAuthProvider>
+              <App />
+            </MusicianAuthProvider>
           </VenueAuthProvider>
         </AuthProvider>
       </ToastProvider>

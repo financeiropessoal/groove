@@ -1,92 +1,94 @@
 import React, { useState } from 'react';
 
 interface CalendarProps {
-    selectedDates: Date[];
-    onDateSelect: (date: Date) => void;
-    bookedDates?: Date[];
+  selectedDates: Date[];
+  onDateSelect: (date: Date) => void;
+  bookedDates?: Date[];
+  selectedDay?: Date | null;
 }
 
-const Calendar: React.FC<CalendarProps> = ({ selectedDates, onDateSelect, bookedDates = [] }) => {
-    const [currentDate, setCurrentDate] = useState(new Date());
+const Calendar: React.FC<CalendarProps> = ({ selectedDates, onDateSelect, bookedDates = [], selectedDay }) => {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
 
-    const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const isSameDay = (d1: Date, d2: Date) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+  const isBooked = (date: Date) => bookedDates.some(bookedDate => isSameDay(date, bookedDate));
+  const isSelected = (date: Date) => selectedDates.some(selectedDate => isSameDay(date, selectedDate));
 
-    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
-    const startingDayOfWeek = firstDayOfMonth.getDay();
-    const totalDays = lastDayOfMonth.getDate();
+  const changeMonth = (amount: number) => {
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() + amount);
+      return newDate;
+    });
+  };
 
-    const changeMonth = (offset: number) => {
-        setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + offset, 1));
-    };
+  const renderHeader = () => (
+    <div className="flex justify-between items-center mb-4">
+      <button onClick={() => changeMonth(-1)} className="text-gray-400 hover:text-white">&lt;</button>
+      <h3 className="font-bold text-lg">{currentMonth.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</h3>
+      <button onClick={() => changeMonth(1)} className="text-gray-400 hover:text-white">&gt;</button>
+    </div>
+  );
 
-    const renderDays = () => {
-        const days = [];
-        // Dias em branco antes do início do mês
-        for (let i = 0; i < startingDayOfWeek; i++) {
-            days.push(<div key={`empty-start-${i}`} className="p-2"></div>);
-        }
+  const renderDays = () => (
+    <div className="grid grid-cols-7 gap-1 text-center text-sm text-gray-400">
+      {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, index) => <div key={index}>{day}</div>)}
+    </div>
+  );
 
-        // Dias do mês
-        for (let day = 1; day <= totalDays; day++) {
-            const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-            date.setHours(0,0,0,0);
+  const renderCells = () => {
+    const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+    const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+    const startDate = new Date(monthStart);
+    startDate.setDate(startDate.getDate() - monthStart.getDay());
+    
+    const cells = [];
+    let day = startDate;
 
-            const isSelected = selectedDates.some(d => d.getTime() === date.getTime());
-            const isToday = date.getTime() === today.getTime();
-            const isPast = date.getTime() < today.getTime();
-            const isBooked = bookedDates.some(d => d.getTime() === date.getTime());
+    while (day <= monthEnd || day.getDay() !== 0) {
+      const date = new Date(day);
+      const isCurrentMonth = date.getMonth() === currentMonth.getMonth();
+      const isToday = isSameDay(date, new Date());
+      const isPast = date < new Date() && !isToday;
+      const isCurrentlySelected = selectedDay ? isSameDay(date, selectedDay) : false;
 
-            let dayClasses = `p-2 text-center rounded-full flex items-center justify-center w-10 h-10 transition-colors duration-200`;
-
-            if (isPast || isBooked) {
-                dayClasses += ' bg-red-900/30 text-gray-500 cursor-not-allowed line-through';
-            } else {
-                dayClasses += ' cursor-pointer hover:bg-gray-600';
-                if(isSelected) {
-                    dayClasses += ' bg-red-600 text-white ring-2 ring-offset-2 ring-offset-gray-800 ring-red-500';
-                } else if(isToday) {
-                    dayClasses += ' bg-red-800 text-white font-bold';
-                }
-            }
-            
-            days.push(
-                <div key={day} className={dayClasses} onClick={() => !isPast && !isBooked && onDateSelect(date)}>
-                    {day}
-                </div>
-            );
-        }
-        return days;
-    };
-
-    return (
-        <div className="bg-gray-900 p-4 rounded-lg">
-            <div className="flex justify-between items-center mb-4">
-                <button onClick={() => changeMonth(-1)} className="text-white hover:bg-gray-700 p-2 rounded-full w-10 h-10 flex justify-center items-center" aria-label="Mês anterior">
-                    <i className="fas fa-chevron-left"></i>
-                </button>
-                <h3 className="text-lg font-semibold text-white">
-                    {currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
-                </h3>
-                <button onClick={() => changeMonth(1)} className="text-white hover:bg-gray-700 p-2 rounded-full w-10 h-10 flex justify-center items-center" aria-label="Próximo mês">
-                    <i className="fas fa-chevron-right"></i>
-                </button>
-            </div>
-            <div className="grid grid-cols-7 gap-2 text-center text-gray-400 text-sm">
-                {daysOfWeek.map(day => <div key={day} className="font-medium">{day}</div>)}
-            </div>
-            <div className="grid grid-cols-7 gap-2 mt-2">
-                {renderDays()}
-            </div>
-            <div className="flex flex-wrap justify-center gap-4 mt-4 pt-4 border-t border-gray-700 text-xs text-gray-400">
-                <div className="flex items-center gap-2"><span className="w-3 h-3 bg-red-600 rounded-full"></span>Selecionado</div>
-                <div className="flex items-center gap-2"><span className="w-3 h-3 bg-red-800 rounded-full"></span>Hoje</div>
-                <div className="flex items-center gap-2"><span className="w-3 h-3 bg-red-900/30 rounded-full"></span>Reservado/Passado</div>
-            </div>
+      let classes = 'w-10 h-10 flex items-center justify-center rounded-full transition-colors';
+      if (isCurrentlySelected) {
+          classes += ' ring-2 ring-offset-2 ring-offset-gray-800 ring-pink-500';
+      }
+      
+      if (!isCurrentMonth) {
+        classes += ' text-gray-600';
+      } else if (isBooked(date)) {
+        classes += ' bg-pink-500/50 border border-pink-500 text-white font-bold cursor-pointer';
+      } else if (isSelected(date)) {
+        classes += ' bg-pink-500 text-white font-bold';
+      } else if (isPast) {
+        classes += ' text-gray-600 cursor-not-allowed';
+      } else {
+        classes += ' hover:bg-gray-700 cursor-pointer';
+        if (isToday) classes += ' border-2 border-pink-500';
+      }
+      
+      cells.push(
+        <div key={day.toString()} className={classes} onClick={() => isCurrentMonth && !isPast && onDateSelect(date)}>
+          {date.getDate()}
         </div>
-    );
+      );
+      day.setDate(day.getDate() + 1);
+       if (cells.length > 42) break; // Safety break
+    }
+
+    return <div className="grid grid-cols-7 gap-1 mt-2">{cells}</div>;
+  };
+
+  return (
+    <div className="bg-gray-800 p-4 rounded-lg">
+      {renderHeader()}
+      {renderDays()}
+      {renderCells()}
+    </div>
+  );
 };
 
 export default Calendar;

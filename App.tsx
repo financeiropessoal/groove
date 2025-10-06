@@ -12,9 +12,8 @@ import EditPlansPage from './pages/EditPlansPage';
 import EditRepertoirePage from './pages/EditRepertoirePage';
 import EditGalleryPage from './pages/EditGalleryPage';
 import EditCalendarPage from './pages/EditCalendarPage';
-import EditTechPage from './pages/EditTechPage';
 import EditHospitalityPage from './pages/EditHospitalityPage';
-import EditTestimonialsPage from './pages/EditTestimonialsPage';
+import FeedbackPage from './pages/EditTestimonialsPage';
 import EditFinancialsPage from './pages/EditFinancialsPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
@@ -26,6 +25,9 @@ import AdminTransactionsPage from './pages/admin/AdminTransactionsPage';
 import AdminSupportPage from './pages/admin/AdminSupportPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminFinancesPage from './pages/admin/AdminFinancesPage';
+import AdminActivityPage from './pages/admin/AdminActivityPage';
+import AdminModerationPage from './pages/admin/AdminModerationPage';
+import AdminAnalyticsPage from './pages/admin/AdminAnalyticsPage';
 import VenueLoginPage from './pages/VenueLoginPage';
 import VenueSignupPage from './pages/VenueSignupPage';
 import VenueDashboardPage from './pages/VenueDashboardPage';
@@ -48,6 +50,26 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ToastContainer from './components/ToastContainer';
 import HomeLayout from './components/HomeLayout'; 
+import GigHubPage from './pages/GigHubPage';
+import SubscriptionPage from './pages/SubscriptionPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import ProProtectedRoute from './components/ProProtectedRoute';
+import MusicianGrid from './components/MusicianGrid';
+import MusicianLoginPage from './pages/MusicianLoginPage';
+import MusicianSignupPage from './pages/MusicianSignupPage';
+import MusicianProtectedRoute from './components/MusicianProtectedRoute';
+import MusicianDashboardPage from './pages/MusicianDashboardPage';
+import EditMusicianProfilePage from './pages/EditMusicianProfilePage';
+import EditMusiciansPage from './pages/EditMusiciansPage';
+import EditMusicianGalleryPage from './pages/EditMusicianGalleryPage';
+import EditMusicianRepertoirePage from './pages/EditMusicianRepertoirePage';
+import FavoriteArtistsPage from './pages/FavoriteArtistsPage';
+import NegotiationPage from './pages/NegotiationPage';
+import EditSpecialPricesPage from './pages/EditSpecialPricesPage';
+import LiveEventPage from './pages/LiveEventPage';
+import PublicFeedbackPage from './pages/PublicFeedbackPage';
+import VenueBookingsPage from './pages/VenueBookingsPage';
+import ReferralPage from './pages/ReferralPage';
 
 const App: React.FC = () => {
   return (
@@ -64,11 +86,14 @@ const App: React.FC = () => {
           }
         >
           <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="analytics" element={<AdminAnalyticsPage />} />
           <Route path="artists" element={<AdminArtistsPage />} />
           <Route path="venues" element={<AdminVenuesPage />} />
           <Route path="transactions" element={<AdminTransactionsPage />} />
           <Route path="finances" element={<AdminFinancesPage />} />
+          <Route path="activity" element={<AdminActivityPage />} />
           <Route path="support" element={<AdminSupportPage />} />
+          <Route path="moderation" element={<AdminModerationPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
         </Route>
 
@@ -91,13 +116,22 @@ const App: React.FC = () => {
             <Route path="/edit-repertoire" element={<EditRepertoirePage />} />
             <Route path="/edit-gallery" element={<EditGalleryPage />} />
             <Route path="/edit-calendar" element={<EditCalendarPage />} />
-            <Route path="/edit-tech" element={<EditTechPage />} />
             <Route path="/edit-hospitality" element={<EditHospitalityPage />} />
-            <Route path="/edit-testimonials" element={<EditTestimonialsPage />} />
-            <Route path="/edit-financials" element={<EditFinancialsPage />} />
+            <Route path="/feedback" element={<FeedbackPage />} />
+            <Route path="/edit-musicians" element={<EditMusiciansPage />} />
+            <Route path="/musicians" element={<MusicianGrid />} />
+            <Route path="/musicians/:id" element={<MusicianGrid />} />
             <Route path="/open-gigs" element={<OpenGigsPage />} />
-            <Route path="/generate-post" element={<GeneratePostPage />} />
             <Route path="/direct-offers" element={<DirectOffersPage />} />
+            <Route path="/subscribe" element={<SubscriptionPage />} />
+            <Route path="/referrals" element={<ReferralPage />} />
+
+            <Route element={<ProProtectedRoute />}>
+              <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/generate-post" element={<GeneratePostPage />} />
+              <Route path="/edit-financials" element={<EditFinancialsPage />} />
+              <Route path="/edit-special-prices" element={<EditSpecialPricesPage />} />
+            </Route>
           </Route>
 
           <Route element={<VenueProtectedRoute />}>
@@ -106,11 +140,23 @@ const App: React.FC = () => {
              <Route path="/booking/:id" element={<BookingPage />} />
              <Route path="/offer-gig" element={<OfferGigPage />} />
              <Route path="/sent-offers" element={<SentOffersPage />} />
+             <Route path="/favorites" element={<FavoriteArtistsPage />} />
+             <Route path="/live-event" element={<LiveEventPage />} />
+             <Route path="/venue-bookings" element={<VenueBookingsPage />} />
+          </Route>
+
+          <Route element={<MusicianProtectedRoute />}>
+            <Route path="/musician-dashboard" element={<MusicianDashboardPage />} />
+            <Route path="/edit-musician-profile" element={<EditMusicianProfilePage />} />
+            <Route path="/edit-musician-gallery" element={<EditMusicianGalleryPage />} />
+            <Route path="/edit-musician-repertoire" element={<EditMusicianRepertoirePage />} />
           </Route>
 
           <Route element={<SharedProtectedRoute />}>
             <Route path="/conversations" element={<ConversationsPage />} />
             <Route path="/chat/:conversationId" element={<ChatPage />} />
+            <Route path="/gig-hub/:gigId" element={<GigHubPage />} />
+            <Route path="/negotiation/:offerId" element={<NegotiationPage />} />
           </Route>
         </Route>
         
@@ -119,9 +165,13 @@ const App: React.FC = () => {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/venue-login" element={<VenueLoginPage />} />
         <Route path="/venue-signup" element={<VenueSignupPage />} />
+        <Route path="/musician-login" element={<MusicianLoginPage />} />
+        <Route path="/musician-signup" element={<MusicianSignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/v/:venueId" element={<PublicFeedbackPage />} />
+
 
       </Routes>
     </>

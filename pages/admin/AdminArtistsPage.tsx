@@ -1,127 +1,159 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
-import { Artist } from '../../data';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ArtistService } from '../../services/ArtistService';
 import { AdminService } from '../../services/AdminService';
+import { Artist } from '../../data';
 import { useToast } from '../../contexts/ToastContext';
+import ArtistApprovalPanel from '../../components/admin/ArtistApprovalPanel';
+import FeedbackModal from '../../components/admin/FeedbackModal';
+import ToggleSwitch from '../../components/admin/ToggleSwitch';
+import QualityScoreBadge from '../../components/admin/QualityScoreBadge';
 
 const AdminArtistsPage: React.FC = () => {
-    const location = useLocation();
-    const { showToast } = useToast();
     const [artists, setArtists] = useState<Artist[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [filter, setFilter] = useState<'all' | 'pending' | 'approved' | 'blocked'>(location.state?.defaultFilter || 'all');
-    const [searchTerm, setSearchTerm] = useState('');
-    const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const { showToast } = useToast();
+    
+    const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
+    const [artistForFeedback, setArtistForFeedback] = useState<Artist | null>(null);
 
-    const fetchArtists = async () => {
+    const fetchArtists = useCallback(async () => {
         setIsLoading(true);
         const data = await ArtistService.getAllArtistsForAdmin();
         setArtists(data);
         setIsLoading(false);
-    };
+        
+        // Asynchronously calculate quality scores for pending artists
+        data.filter(a => a.status === 'pending' && a.quality_score === undefined).forEach(async (artist) => {
+            const qualityData = await AdminService.generateProfileQualityScore(artist);
+            await AdminService.updateArtistProfileData(artist.id, { 
+                quality_score: qualityData.score,
+                quality_issues: qualityData.issues 
+            });
+            // Update state locally to reflect the new score
+            setArtists(prev => prev.map(a => a.id === artist.id ? { ...a, ...qualityData } : a));
+        });
+    }, []);
 
     useEffect(() => {
         fetchArtists();
-    }, []);
+    }, [fetchArtists]);
 
-    const filteredArtists = useMemo(() => {
-        return artists
-            .filter(a => filter === 'all' || a.status === filter)
-            .filter(a => a.name.toLowerCase().includes(searchTerm.toLowerCase()) || a.email?.toLowerCase().includes(searchTerm.toLowerCase()));
-    }, [artists, filter, searchTerm]);
-    
-    const handleStatusChange = async (artistId: string, newStatus: 'approved' | 'pending' | 'blocked') => {
-        setActionLoading(artistId);
-        const success = await AdminService.updateArtistStatus(artistId, newStatus);
+    const handleStatusChange = useCallback(async (artistId: string, status: 'approved' | 'pending' | 'blocked') => {
+        const success = await AdminService.updateArtistStatus(artistId, status);
         if (success) {
-            showToast('Status do artista atualizado!', 'success');
-            // Optimistic update
-            setArtists(prev => prev.map(a => a.id === artistId ? { ...a, status: newStatus } : a));
+            setArtists(prev => prev.map(a => a.id === artistId ? { ...a, status } : a));
+            showToast(`Status de ${status === 'approved' ? 'aprovado' : 'bloqueado'} com sucesso!`, 'success');
         } else {
-            showToast('Erro ao atualizar o status.', 'error');
+            showToast('Falha ao atualizar o status.', 'error');
         }
-        setActionLoading(null);
-    }
+        setSelectedArtist(null);
+    }, [showToast]);
 
-
-    if (isLoading) {
-        return <div className="flex items-center justify-center h-full"><i className="fas fa-spinner fa-spin text-4xl text-red-500"></i></div>;
-    }
-
-    const StatusBadge: React.FC<{ status: Artist['status'] }> = ({ status }) => {
-        const config = {
-            approved: { text: 'Aprovado', class: 'bg-green-800 text-green-200' },
-            pending: { text: 'Pendente', class: 'bg-yellow-800 text-yellow-200' },
-            blocked: { text: 'Bloqueado', class: 'bg-red-800 text-red-200' },
-        };
-        const { text, class: className } = config[status];
-        return <span className={`px-2 py-1 text-xs rounded-full ${className}`}>{text}</span>;
+    const handleToggleFeatured = async (artistId: string, isFeatured: boolean) => {
+        const success = await AdminService.toggleArtistFeature(artistId, isFeatured);
+        if (success) {
+            setArtists(prev => prev.map(a => a.id === artistId ? { ...a, is_featured: isFeatured } : a));
+            showToast(`Artista ${isFeatured ? 'destacado' : 'removido dos destaques'}.`, 'success');
+        } else {
+            showToast('Falha ao alterar o status de destaque.', 'error');
+        }
+    };
+    
+    const handleSendRejection = (artist: Artist, message: string) => {
+        console.log(`Mensagem de recusa para ${artist.name}:\n${message}`);
+        handleStatusChange(artist.id, 'blocked');
+        showToast('Artista recusado e notificação (simulada) enviada.', 'info');
+        setArtistForFeedback(null);
     };
 
-    return (
-        <div className="space-y-6">
-            <h1 className="text-3xl font-bold">Gerenciar Artistas</h1>
+    const openReviewPanel = (artist: Artist) => {
+        setSelectedArtist(artist);
+    };
 
-            <div className="bg-gray-800 p-4 rounded-lg flex gap-4">
-                <input type="text" placeholder="Buscar por nome ou email..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="flex-grow bg-gray-900 border border-gray-700 rounded-md py-2 px-4" />
-                <select value={filter} onChange={e => setFilter(e.target.value as any)} className="bg-gray-900 border border-gray-700 rounded-md py-2 px-4">
-                    <option value="all">Todos</option>
-                    <option value="pending">Pendentes</option>
-                    <option value="approved">Aprovados</option>
-                    <option value="blocked">Bloqueados</option>
-                </select>
-            </div>
-            
+    if (isLoading && artists.length === 0) {
+        return <div className="flex items-center justify-center h-full"><i className="fas fa-spinner fa-spin text-4xl text-pink-500"></i></div>;
+    }
+
+    return (
+        <div>
+            <h1 className="text-3xl font-bold mb-6">Gerenciar Artistas</h1>
             <div className="bg-gray-800 rounded-lg overflow-hidden">
-                <table className="w-full text-sm">
-                    <thead className="bg-gray-700 text-left">
-                        <tr>
-                            <th className="p-3">Nome</th>
-                            <th className="p-3">Email</th>
-                            <th className="p-3">Gênero</th>
-                            <th className="p-3">Status</th>
-                            <th className="p-3 text-right">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredArtists.map(artist => (
-                            <tr key={artist.id} className="border-b border-gray-700 hover:bg-gray-700/50">
-                                <td className="p-3 font-semibold">{artist.name}</td>
-                                <td className="p-3 text-gray-400">{artist.email}</td>
-                                <td className="p-3 text-gray-400">{artist.genre.primary}</td>
-                                <td className="p-3">
-                                    <StatusBadge status={artist.status} />
-                                </td>
-                                <td className="p-3 text-right">
-                                    <div className="flex justify-end gap-2">
-                                        {artist.status === 'pending' && (
-                                            <button onClick={() => handleStatusChange(artist.id, 'approved')} disabled={actionLoading === artist.id} className="text-xs font-semibold bg-green-600 text-white px-3 py-1.5 rounded-md hover:bg-green-700 disabled:opacity-50">
-                                                {actionLoading === artist.id ? <i className="fas fa-spinner fa-spin"></i> : 'Aprovar'}
-                                            </button>
-                                        )}
-                                         {artist.status === 'approved' && (
-                                            <button onClick={() => handleStatusChange(artist.id, 'pending')} disabled={actionLoading === artist.id} className="text-xs font-semibold bg-gray-600 text-white px-3 py-1.5 rounded-md hover:bg-gray-500 disabled:opacity-50">
-                                                {actionLoading === artist.id ? <i className="fas fa-spinner fa-spin"></i> : 'Tornar Pendente'}
-                                            </button>
-                                        )}
-                                        {artist.status !== 'blocked' ? (
-                                             <button onClick={() => handleStatusChange(artist.id, 'blocked')} disabled={actionLoading === artist.id} className="text-xs font-semibold bg-red-600 text-white px-3 py-1.5 rounded-md hover:bg-red-700 disabled:opacity-50">
-                                                {actionLoading === artist.id ? <i className="fas fa-spinner fa-spin"></i> : 'Bloquear'}
-                                            </button>
-                                        ) : (
-                                            <button onClick={() => handleStatusChange(artist.id, 'pending')} disabled={actionLoading === artist.id} className="text-xs font-semibold bg-yellow-600 text-white px-3 py-1.5 rounded-md hover:bg-yellow-700 disabled:opacity-50">
-                                                {actionLoading === artist.id ? <i className="fas fa-spinner fa-spin"></i> : 'Desbloquear'}
-                                            </button>
-                                        )}
-                                    </div>
-                                </td>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-700 text-left">
+                            <tr>
+                                <th className="p-3">Nome</th>
+                                <th className="p-3">Email</th>
+                                <th className="p-3 text-center">Qualidade</th>
+                                <th className="p-3 text-center">Completo</th>
+                                <th className="p-3 text-center">Status</th>
+                                <th className="p-3 text-center">Destaque</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-                 {filteredArtists.length === 0 && <p className="p-4 text-center text-gray-400">Nenhum artista encontrado.</p>}
+                        </thead>
+                        <tbody>
+                            {artists.map(artist => (
+                                <tr key={artist.id} className="border-b border-gray-700 hover:bg-gray-700/50 transition-colors">
+                                    <td className="p-3">
+                                        <button onClick={() => openReviewPanel(artist)} className="font-semibold hover:text-pink-400">
+                                            {artist.name}
+                                        </button>
+                                    </td>
+                                    <td className="p-3 text-gray-400">{artist.email}</td>
+                                    <td className="p-3 text-center">
+                                        <QualityScoreBadge score={artist.quality_score} />
+                                    </td>
+                                     <td className="p-3 text-center">
+                                        {artist.profile_completeness?.is_complete ? (
+                                            <i className="fas fa-check-circle text-green-400" title="Perfil Completo"></i>
+                                        ) : (
+                                            <i 
+                                                className="fas fa-exclamation-triangle text-yellow-400"
+                                                title={`Pendente: ${artist.profile_completeness?.missing_fields.join(', ')}`}
+                                            ></i>
+                                        )}
+                                    </td>
+                                    <td className="p-3 text-center">
+                                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                            artist.status === 'approved' ? 'bg-green-500/20 text-green-400' :
+                                            artist.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                                            'bg-red-500/20 text-red-400'
+                                         }`}>
+                                            {artist.status}
+                                        </span>
+                                    </td>
+                                    <td className="p-3 text-center">
+                                         <ToggleSwitch
+                                            checked={artist.is_featured || false}
+                                            onChange={(e) => handleToggleFeatured(artist.id, e.target.checked)}
+                                        />
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
+            {selectedArtist && (
+                <ArtistApprovalPanel
+                    artist={selectedArtist}
+                    onClose={() => setSelectedArtist(null)}
+                    onApprove={() => handleStatusChange(selectedArtist.id, 'approved')}
+                    onReject={() => {
+                        setArtistForFeedback(selectedArtist);
+                        setSelectedArtist(null);
+                    }}
+                    onBlock={() => handleStatusChange(selectedArtist.id, 'blocked')}
+                />
+            )}
+            
+            {artistForFeedback && (
+                <FeedbackModal
+                    artist={artistForFeedback}
+                    onClose={() => setArtistForFeedback(null)}
+                    onSend={handleSendRejection}
+                />
+            )}
         </div>
     );
 };

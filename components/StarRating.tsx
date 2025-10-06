@@ -1,28 +1,21 @@
-import React, { useState, memo } from 'react';
+import React, { useState } from 'react';
 
 interface StarRatingProps {
   rating: number;
-  onRatingChange: (rating: number) => void;
+  setRating: (rating: number) => void;
 }
 
-const StarRating: React.FC<StarRatingProps> = ({ rating, onRatingChange }) => {
-  const [hover, setHover] = useState(0);
-
+const StarRating: React.FC<StarRatingProps> = ({ rating, setRating }) => {
   return (
-    <div className="flex justify-center space-x-2">
+    <div>
       {[...Array(5)].map((_, index) => {
-        const starValue = index + 1;
+        const ratingValue = index + 1;
         return (
           <button
             type="button"
-            key={starValue}
-            className={`text-4xl transition-colors duration-200 ${
-              starValue <= (hover || rating) ? 'text-yellow-400' : 'text-gray-600'
-            }`}
-            onClick={() => onRatingChange(starValue)}
-            onMouseEnter={() => setHover(starValue)}
-            onMouseLeave={() => setHover(0)}
-            aria-label={`Avaliar com ${starValue} estrela${starValue > 1 ? 's' : ''}`}
+            key={ratingValue}
+            onClick={() => setRating(ratingValue)}
+            className={`text-2xl ${ratingValue <= rating ? 'text-yellow-400' : 'text-gray-500'}`}
           >
             &#9733;
           </button>
@@ -32,4 +25,4 @@ const StarRating: React.FC<StarRatingProps> = ({ rating, onRatingChange }) => {
   );
 };
 
-export default memo(StarRating);
+export default StarRating;

@@ -112,7 +112,7 @@ export class DirectOfferService {
             .filter(offer => !!offer.artist) as EnrichedDirectOffer[];
     }
     
-    static async updateOfferStatus(offerId: number, status: 'accepted' | 'declined' | 'pending'): Promise<boolean> {
+    static async updateOfferStatus(offerId: number, status: 'accepted' | 'declined' | 'pending' | 'countered'): Promise<boolean> {
          if (!isSupabaseConfigured) return false;
 
         const { error } = await supabase
@@ -122,6 +122,27 @@ export class DirectOfferService {
 
         if (error) {
             console.error(`Error updating offer status to ${status}:`, error.message);
+            return false;
+        }
+        return true;
+    }
+
+    static async updateOfferTerms(offerId: number, newTerms: Partial<DirectGigOffer>): Promise<boolean> {
+        if (!isSupabaseConfigured) return false;
+
+        const { error } = await supabase
+            .from('direct_offers')
+            .update({
+                date: newTerms.date,
+                start_time: newTerms.startTime,
+                end_time: newTerms.endTime,
+                payment: newTerms.payment,
+                status: 'countered' // Always set to countered on update
+            })
+            .eq('id', offerId);
+        
+        if (error) {
+            console.error(`Error updating offer terms:`, error.message);
             return false;
         }
         return true;
@@ -155,16 +176,21 @@ export class DirectOfferService {
         }
 
         // 3. Create a corresponding 'booking' record for financial tracking.
-        // This is a simplified booking without a plan.
+        const confirmation_pin = Math.floor(1000 + Math.random() * 9000).toString();
         const { error: bookingInsertError } = await supabase
             .from('bookings')
             .insert([{
                 artist_id: offer.artistId,
                 venue_id: offer.venueId,
-                plan_id: 0, // 0 indicates a direct offer, not a standard plan
+                plan_id: null, // Indicates a direct offer
                 date: offer.date,
-                status: 'pending',
+                start_time: offer.startTime,
+                end_time: offer.endTime,
+                payment: offer.payment,
+                status: 'pending', // Payment is pending until venue pays
                 payout_status: 'pending',
+                confirmation_pin: confirmation_pin,
+                artist_checked_in: false,
             }]);
         
          if (bookingInsertError) {

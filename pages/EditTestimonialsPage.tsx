@@ -1,115 +1,107 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
 import { Testimonial } from '../data';
-import { useToast } from '../contexts/ToastContext';
+import { PublicRating } from '../types';
+import { PublicRatingService } from '../services/PublicRatingService';
+import EmptyState from '../components/EmptyState';
+import StarRatingDisplay from '../components/StarRatingDisplay';
 
-const EditTestimonialsPage: React.FC = () => {
-    const { artist, logout, updateArtistProfile } = useAuth();
-    const navigate = useNavigate();
-    const { showToast } = useToast();
-
-    const [testimonials, setTestimonials] = useState<Testimonial[]>(artist?.testimonials || []);
-    const [isSaving, setIsSaving] = useState(false);
-
-    if (!artist) {
-        return (
-             <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-                <p>Carregando dados do artista...</p>
-            </div>
-        );
-    }
+const FeedbackPage: React.FC = () => {
+    const { artist } = useAuth();
+    const [activeTab, setActiveTab] = useState<'venues' | 'public'>('venues');
+    const [publicRatings, setPublicRatings] = useState<PublicRating[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     
-    const handleChange = (index: number, field: keyof Testimonial, value: string) => {
-       const newTestimonials = [...testimonials];
-       newTestimonials[index][field] = value;
-       setTestimonials(newTestimonials);
-    };
+    const testimonials = artist?.testimonials || [];
 
-    const addTestimonial = () => {
-        setTestimonials([...testimonials, { quote: '', author: '', source: '' }]);
-    };
-    
-    const removeTestimonial = (index: number) => {
-        const newTestimonials = testimonials.filter((_, i) => i !== index);
-        setTestimonials(newTestimonials);
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSaving(true);
-        try {
-            await updateArtistProfile({ testimonials });
-            showToast("Depoimentos atualizados com sucesso!", 'success');
-            navigate('/dashboard');
-        } catch (error) {
-            console.error("Failed to save testimonials:", error);
-            showToast("Ocorreu um erro ao salvar os depoimentos. Tente novamente.", 'error');
-        } finally {
-            setIsSaving(false);
+    useEffect(() => {
+        if (artist) {
+            setIsLoading(true);
+            PublicRatingService.getRatingsForArtist(artist.id).then(data => {
+                setPublicRatings(data);
+                setIsLoading(false);
+            });
         }
-    };
+    }, [artist]);
+
+    const TabButton: React.FC<{tab: 'venues' | 'public', label: string}> = ({tab, label}) => (
+        <button onClick={() => setActiveTab(tab)} className={`px-6 py-3 text-lg font-semibold transition-colors ${activeTab === tab ? 'text-pink-400 border-b-2 border-pink-400' : 'text-gray-400 hover:text-white'}`}>
+            {label}
+        </button>
+    );
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white">
-             <header className="bg-gray-800 shadow-md">
-                 <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                         <Link to="/dashboard" className="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700">
-                             <i className="fas fa-arrow-left"></i>
-                         </Link>
-                        <h1 className="text-xl font-bold tracking-wider">Editar Depoimentos</h1>
-                    </div>
-                     <button onClick={logout} className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors">
-                        <i className="fas fa-sign-out-alt"></i>
-                        <span>Sair</span>
-                     </button>
+        <div>
+            <div className="flex items-center gap-4 mb-8">
+                <Link to="/dashboard" className="text-gray-400 hover:text-white transition-colors" aria-label="Voltar ao painel">
+                    <i className="fas fa-arrow-left text-2xl"></i>
+                </Link>
+                <div>
+                    <h1 className="text-3xl font-bold">Feedback Recebido</h1>
+                    <p className="text-gray-400">Veja o que contratantes e o público estão dizendo sobre você.</p>
                 </div>
-            </header>
+            </div>
 
-            <main className="container mx-auto px-4 py-8">
-                 <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
-                    {testimonials.map((testimonial, index) => (
-                        <div key={index} className="bg-gray-800/50 p-6 rounded-lg relative">
-                             <button type="button" onClick={() => removeTestimonial(index)} className="absolute top-4 right-4 text-gray-500 hover:text-red-500 transition-colors" aria-label="Remover Depoimento">
-                                <i className="fas fa-trash-alt"></i>
-                            </button>
-                            <h3 className="text-lg font-bold text-red-400 mb-4">Depoimento #{index + 1}</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Depoimento (Citação)</label>
-                                    <textarea value={testimonial.quote} onChange={(e) => handleChange(index, 'quote', e.target.value)} rows={4} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Ex: 'O show foi incrível!'"/>
-                                </div>
-                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">Autor</label>
-                                        <input type="text" value={testimonial.author} onChange={(e) => handleChange(index, 'author', e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Ex: Mariana Costa" />
+            <div className="border-b border-gray-700 mb-6">
+                <nav className="flex justify-center gap-8">
+                    <TabButton tab="venues" label="De Contratantes" />
+                    <TabButton tab="public" label="Do Público" />
+                </nav>
+            </div>
+            
+            <div className="max-w-3xl mx-auto">
+                {activeTab === 'venues' && (
+                     testimonials.length > 0 ? (
+                        <div className="space-y-4">
+                            {testimonials.map((testimonial, index) => (
+                                 <blockquote key={index} className="relative p-6 bg-gray-800 rounded-lg">
+                                    <div className="absolute top-2 left-2 text-6xl text-gray-700 opacity-50 z-0">
+                                        <i className="fas fa-quote-left"></i>
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">Fonte</label>
-                                        <input type="text" value={testimonial.source} onChange={(e) => handleChange(index, 'source', e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Ex: Gerente, Bar do Zé" />
-                                    </div>
-                                </div>
-                            </div>
+                                    <p className="text-gray-200 italic z-10 relative text-lg">"{testimonial.quote}"</p>
+                                    <footer className="mt-4 text-right text-gray-400">— <span className="font-semibold text-white">{testimonial.author}</span>, {testimonial.source}</footer>
+                                </blockquote>
+                            ))}
                         </div>
-                    ))}
+                    ) : (
+                        <EmptyState
+                            icon="fa-comments"
+                            title="Nenhum depoimento ainda"
+                            message="Após realizar shows pela plataforma, os contratantes poderão deixar avaliações que aparecerão aqui e em seu perfil público."
+                        />
+                    )
+                )}
 
-                    <button type="button" onClick={addTestimonial} className="w-full border-2 border-dashed border-gray-600 hover:border-red-500 text-gray-400 hover:text-white font-semibold py-3 px-4 rounded-lg transition-colors">
-                        <i className="fas fa-plus mr-2"></i>Adicionar Novo Depoimento
-                    </button>
-                    
-                     <div className="flex justify-end gap-4 pt-6 border-t border-gray-700">
-                        <button type="button" onClick={() => navigate('/dashboard')} className="px-6 py-2 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-500 transition-colors">
-                            Cancelar
-                        </button>
-                        <button type="submit" disabled={isSaving} className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:bg-gray-500 disabled:cursor-wait flex items-center gap-2">
-                            {isSaving ? (<><i className="fas fa-spinner fa-spin"></i><span>Salvando...</span></>) : ('Salvar Depoimentos')}
-                        </button>
-                    </div>
-                </form>
-            </main>
+                {activeTab === 'public' && (
+                    isLoading ? <div className="text-center py-12"><i className="fas fa-spinner fa-spin text-3xl text-pink-500"></i></div> :
+                    publicRatings.length > 0 ? (
+                        <div className="space-y-4">
+                            {publicRatings.map(rating => (
+                                <div key={rating.id} className="bg-gray-800 p-4 rounded-lg">
+                                    <div className="flex justify-between items-start">
+                                        <StarRatingDisplay rating={rating.rating} />
+                                        <div className="text-right">
+                                            <p className="text-sm font-semibold text-gray-300">{rating.venueName}</p>
+                                            <p className="text-xs text-gray-500">{new Date(rating.createdAt).toLocaleDateString('pt-BR')}</p>
+                                        </div>
+                                    </div>
+                                    {rating.comment && <p className="text-gray-300 italic mt-3 text-sm">"{rating.comment}"</p>}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                         <EmptyState
+                            icon="fa-qrcode"
+                            title="Nenhuma avaliação do público"
+                            message="Os contratantes podem gerar um QR Code durante seu show para que o público possa te avaliar. Essas avaliações aparecerão aqui!"
+                        />
+                    )
+                )}
+            </div>
+
         </div>
     );
 };
 
-export default EditTestimonialsPage;
+export default FeedbackPage;

@@ -3,13 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Groove Music</title>
+    <title>Groove Music | Conecte Artistas e Contratantes de Música ao Vivo</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%23ec4899%22/><path d=%22M25 50 H35 L40 60 L50 40 L55 55 L60 45 L65 50 H75%22 stroke=%22white%22 stroke-width=%228%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>">
+
     <!-- SEO & Social Sharing Meta Tags -->
-    <meta name="description" content="Groove Music: Uma plataforma para conectar artistas musicais locais com bares e restaurantes. Artistas podem mostrar seu trabalho e locais podem encontrar talentos para seus eventos." />
+    <meta name="description" content="Plataforma para conectar artistas musicais locais com bares, restaurantes e eventos. Encontre talentos ou o palco perfeito para seu show." />
+    <meta name="keywords" content="música ao vivo, contratar músicos, artistas locais, bandas para eventos, show em bar, agenda de shows, música para restaurante" />
+    <link rel="canonical" href="https://groovemusic.com.br/" />
+    
     <meta property="og:title" content="Groove Music: Onde o artista encontra o palco!" />
     <meta property="og:description" content="Conecte-se com artistas locais ou encontre o palco perfeito para seu show. A plataforma completa para a cena musical." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://groovemusic.com.br/" />
     <meta property="og:image" content="https://images.pexels.com/photos/3391932/pexels-photo-3391932.jpeg" />
+    
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Groove Music: Onde o artista encontra o palco!" />
     <meta name="twitter:description" content="Conecte-se com artistas locais ou encontre o palco perfeito para seu show. A plataforma completa para a cena musical." />
@@ -17,6 +24,18 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    
+    <!-- Structured Data for better SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Groove Music",
+      "url": "https://groovemusic.com.br/",
+      "description": "Plataforma para conectar artistas musicais locais com bares, restaurantes e eventos. Encontre talentos ou o palco perfeito para seu show."
+    }
+    </script>
+    
   <script type="importmap">
 {
   "imports": {
@@ -33,6 +52,11 @@
 }
 </script>
 <style>
+  :root {
+    --theme-primary: #ec4899; /* pink-500 */
+    --theme-secondary: #f97316; /* orange-500 */
+  }
+
   /* Custom Scrollbar for Webkit browsers */
   ::-webkit-scrollbar {
     width: 8px;
@@ -48,86 +72,94 @@
     background: #6b7280; /* bg-gray-500 */
   }
 
-  /* Fade-in animation for tab content */
+  /* Animations */
   @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
   }
   
-  /* Toast Notifications */
   @keyframes toastIn {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
   }
-  
   @keyframes toastOut {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(100%);
-      opacity: 0;
-    }
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
   }
-
-  .toast-in {
-    animation: toastIn 0.5s ease-out forwards;
-  }
+  .toast-in { animation: toastIn 0.5s ease-out forwards; }
+  .toast-out { animation: toastOut 0.5s ease-in forwards; }
   
-  .toast-out {
-    animation: toastOut 0.5s ease-in forwards;
-  }
-  
-  /* Sliding Panel */
   @keyframes slideInRight {
     from { transform: translateX(100%); }
     to { transform: translateX(0); }
   }
-
   @keyframes slideOutRight {
     from { transform: translateX(0); }
     to { transform: translateX(100%); }
   }
-
   @keyframes fadeInOverlay {
     from { opacity: 0; }
     to { opacity: 1; }
   }
-
   @keyframes fadeOutOverlay {
     from { opacity: 1; }
     to { opacity: 0; }
   }
 
-  .slide-in-right {
-    animation: slideInRight 0.3s ease-out forwards;
+  .slide-in-right { animation: slideInRight 0.3s ease-out forwards; }
+  .slide-out-right { animation: slideOutRight 0.3s ease-in forwards; }
+  .fade-in-overlay { animation: fadeInOverlay 0.3s ease-out forwards; }
+  .fade-out-overlay { animation: fadeOutOverlay 0.3s ease-in forwards; }
+
+  @keyframes glow {
+    0% { box-shadow: 0 0 5px var(--theme-primary), 0 0 10px var(--theme-primary); }
+    50% { box-shadow: 0 0 20px var(--theme-secondary), 0 0 30px var(--theme-secondary); }
+    100% { box-shadow: 0 0 5px var(--theme-primary), 0 0 10px var(--theme-primary); }
   }
-  .slide-out-right {
-    animation: slideOutRight 0.3s ease-in forwards;
-  }
-  .fade-in-overlay {
-    animation: fadeInOverlay 0.3s ease-out forwards;
-  }
-  .fade-out-overlay {
-    animation: fadeOutOverlay 0.3s ease-in forwards;
+  .btn-glow:hover {
+    animation: glow 2s infinite;
   }
 
+  /* Print Styles for QR Code PDF generation */
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #printable-area, #printable-area * {
+      visibility: visible;
+    }
+    #printable-area {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: white;
+      color: black;
+    }
+     #printable-area img {
+        width: 80%;
+        max-width: 400px;
+     }
+     #printable-area h1 {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+     }
+     #printable-area p {
+        font-size: 1.25rem;
+        margin-top: 1rem;
+        max-width: 80%;
+     }
+  }
 
 </style>
 </head>

@@ -1,108 +1,112 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { Song } from '../data';
 import { useToast } from '../contexts/ToastContext';
+import { Song } from '../types';
 
 const EditRepertoirePage: React.FC = () => {
-    const { artist, logout, updateArtistProfile } = useAuth();
-    const navigate = useNavigate();
+    const { artist, updateArtistProfile } = useAuth();
     const { showToast } = useToast();
-
+    
     const [repertoire, setRepertoire] = useState<Song[]>(artist?.repertoire || []);
+    const [newSong, setNewSong] = useState({ title: '', artist: '' });
     const [isSaving, setIsSaving] = useState(false);
 
-    if (!artist) {
-        return (
-             <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-                <p>Carregando dados do artista...</p>
-            </div>
-        );
-    }
-    
-    const handleSongChange = (index: number, field: keyof Song, value: string) => {
-       const newRepertoire = [...repertoire];
-       // @ts-ignore
-       newRepertoire[index][field] = value;
-       setRepertoire(newRepertoire);
-    };
-
-    const addSong = () => {
-        setRepertoire([...repertoire, { title: '', artist: '', duration: '', previewUrl: '' }]);
-    };
-    
-    const removeSong = (index: number) => {
-        const newRepertoire = repertoire.filter((_, i) => i !== index);
-        setRepertoire(newRepertoire);
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleAddSong = (e: React.FormEvent) => {
         e.preventDefault();
+        if (newSong.title && newSong.artist) {
+            setRepertoire([...repertoire, newSong]);
+            setNewSong({ title: '', artist: '' });
+        }
+    };
+
+    const handleRemoveSong = (index: number) => {
+        setRepertoire(repertoire.filter((_, i) => i !== index));
+    };
+
+    const handleSave = async () => {
         setIsSaving(true);
         try {
             await updateArtistProfile({ repertoire });
-            showToast("Repertório atualizado com sucesso!", 'success');
-            navigate('/dashboard');
+            showToast('Repertório salvo com sucesso!', 'success');
         } catch (error) {
-            console.error("Failed to save repertoire:", error);
-            showToast("Ocorreu um erro ao salvar o repertório. Tente novamente.", 'error');
+            showToast('Erro ao salvar repertório.', 'error');
         } finally {
             setIsSaving(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white">
-             <header className="bg-gray-800 shadow-md">
-                 <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                         <Link to="/dashboard" className="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700">
-                             <i className="fas fa-arrow-left"></i>
-                         </Link>
-                        <h1 className="text-xl font-bold tracking-wider">Editar Repertório</h1>
+        <div>
+            <div className="flex flex-col md:flex-row justify-between md:items-center mb-8 gap-4">
+                <div className="flex items-center gap-4">
+                    <Link to="/dashboard" className="text-gray-400 hover:text-white transition-colors" aria-label="Voltar ao painel">
+                        <i className="fas fa-arrow-left text-2xl"></i>
+                    </Link>
+                     <div>
+                        <h1 className="text-3xl font-bold">Editar Repertório</h1>
+                        <p className="text-gray-400">Liste as músicas que você toca em seus shows.</p>
                     </div>
-                     <button onClick={logout} className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors">
-                        <i className="fas fa-sign-out-alt"></i>
-                        <span>Sair</span>
-                     </button>
                 </div>
-            </header>
-
-            <main className="container mx-auto px-4 py-8">
-                 <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-                     <div className="bg-gray-800/50 p-6 rounded-lg">
-                        {repertoire.map((song, index) => (
-                             <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end mb-4 p-4 bg-gray-900/50 rounded-md">
-                                 <div className="md:col-span-2">
-                                     <label className="block text-sm font-medium text-gray-300 mb-1">Título da Música</label>
-                                     <input type="text" value={song.title} onChange={(e) => handleSongChange(index, 'title', e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-red-500" required/>
-                                 </div>
-                                 <div>
-                                     <label className="block text-sm font-medium text-gray-300 mb-1">Artista Original</label>
-                                     <input type="text" value={song.artist} onChange={(e) => handleSongChange(index, 'artist', e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-red-500" required/>
-                                 </div>
-                                 <div className="flex items-center">
-                                    <button type="button" onClick={() => removeSong(index)} className="bg-gray-700 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-md transition-colors" aria-label="Remover música">
+                <button onClick={handleSave} disabled={isSaving} className="px-6 py-2 bg-pink-600 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-gray-500 flex items-center gap-2">
+                    {isSaving ? <><i className="fas fa-spinner fa-spin"></i>Salvando...</> : 'Salvar Repertório'}
+                </button>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1">
+                    <div className="bg-gray-800 p-6 rounded-lg sticky top-8">
+                        <h2 className="text-xl font-bold mb-4">Adicionar Música</h2>
+                        <form onSubmit={handleAddSong} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Título da Música</label>
+                                <input 
+                                    type="text" 
+                                    value={newSong.title}
+                                    onChange={e => setNewSong({...newSong, title: e.target.value})}
+                                    className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-3"
+                                    required
+                                />
+                            </div>
+                             <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Artista Original</label>
+                                <input 
+                                    type="text" 
+                                    value={newSong.artist}
+                                    onChange={e => setNewSong({...newSong, artist: e.target.value})}
+                                    className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-3"
+                                    required
+                                />
+                            </div>
+                            <button type="submit" className="w-full bg-gray-600 text-white font-bold py-2.5 rounded-lg hover:bg-gray-500 transition-colors">Adicionar à Lista</button>
+                        </form>
+                    </div>
+                </div>
+                <div className="lg:col-span-2 bg-gray-800 p-6 rounded-lg">
+                    <h2 className="text-xl font-bold mb-4">Sua Lista ({repertoire.length})</h2>
+                    {repertoire.length > 0 ? (
+                        <ul className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                            {repertoire.map((song, index) => (
+                                <li key={index} className="bg-gray-900/50 p-3 rounded-md flex justify-between items-center transition-all animate-fade-in">
+                                    <div>
+                                        <p className="font-semibold text-white">{song.title}</p>
+                                        <p className="text-sm text-gray-400">{song.artist}</p>
+                                    </div>
+                                    <button onClick={() => handleRemoveSong(index)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors">
                                         <i className="fas fa-trash"></i>
                                     </button>
-                                 </div>
-                             </div>
-                        ))}
-                         <button type="button" onClick={addSong} className="w-full mt-4 border-2 border-dashed border-gray-600 hover:border-red-500 text-gray-400 hover:text-white font-semibold py-3 px-4 rounded-lg transition-colors">
-                            <i className="fas fa-plus mr-2"></i>Adicionar Música
-                        </button>
-                     </div>
-                     
-                     <div className="flex justify-end gap-4 pt-6 mt-6 border-t border-gray-700">
-                        <button type="button" onClick={() => navigate('/dashboard')} className="px-6 py-2 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-500 transition-colors">
-                            Cancelar
-                        </button>
-                        <button type="submit" disabled={isSaving} className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:bg-gray-500 disabled:cursor-wait flex items-center gap-2">
-                            {isSaving ? (<><i className="fas fa-spinner fa-spin"></i><span>Salvando...</span></>) : ('Salvar Repertório')}
-                        </button>
-                    </div>
-                </form>
-            </main>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                         <div className="text-center py-16">
+                            <i className="fas fa-music text-5xl text-gray-600 mb-4"></i>
+                            <p className="text-gray-300 font-semibold text-lg">Seu repertório está vazio</p>
+                            <p className="text-gray-400 mt-2 text-sm">Adicione as músicas que você toca usando o formulário ao lado.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };

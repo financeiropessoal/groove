@@ -33,7 +33,7 @@ const LoginPage: React.FC = () => {
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
                     <Link to="/" className="flex items-center justify-center space-x-3 mb-4">
-                        <i className="fas fa-wave-square text-red-500 text-4xl"></i>
+                        <i className="fas fa-wave-square text-pink-500 text-4xl"></i>
                         <h1 className="text-3xl font-bold tracking-wider">Groove Music</h1>
                     </Link>
                     <h2 className="text-2xl font-bold text-gray-200">Área do Artista</h2>
@@ -50,14 +50,14 @@ const LoginPage: React.FC = () => {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
-                                className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                                className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
                                 placeholder="seuemail@exemplo.com"
                             />
                         </div>
                         <div>
                             <div className="flex justify-between items-center mb-2">
                                 <label htmlFor="password" className="block text-sm font-medium text-gray-300">Senha</label>
-                                <Link to="/forgot-password" className="text-sm font-medium text-red-400 hover:text-red-300">Esqueceu a senha?</Link>
+                                <Link to="/forgot-password" className="text-sm font-medium text-pink-400 hover:text-pink-300">Esqueceu a senha?</Link>
                             </div>
                             <input
                                 id="password"
@@ -65,7 +65,7 @@ const LoginPage: React.FC = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                                className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-pink-500"
                                 placeholder="********"
                             />
                         </div>
@@ -76,7 +76,7 @@ const LoginPage: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg transition-colors hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-wait flex items-center justify-center gap-2"
+                                className="w-full bg-gradient-to-r from-pink-500 to-orange-500 text-white font-bold py-3 px-4 rounded-lg transition-shadow hover:shadow-[0_0_20px_rgba(236,72,153,0.7)] disabled:from-gray-600 disabled:to-gray-600 disabled:shadow-none disabled:cursor-wait flex items-center justify-center gap-2"
                             >
                                 {isLoading ? (
                                     <>
@@ -90,8 +90,8 @@ const LoginPage: React.FC = () => {
                         </div>
                     </form>
                     <div className="text-center mt-4 text-sm text-gray-400">
-                      <p>Ainda não tem conta? <Link to="/signup" className="text-red-400 hover:underline">Cadastre-se</Link></p>
-                      <p className="mt-2">É um contratante? <Link to="/venue-login" className="text-red-400 hover:underline">Login Contratante</Link></p>
+                      <p>Ainda não tem conta? <Link to="/signup" className="text-pink-400 hover:underline">Cadastre-se</Link></p>
+                      <p className="mt-2">É um contratante? <Link to="/venue-login" className="text-pink-400 hover:underline">Login Contratante</Link></p>
                     </div>
                 </div>
             </div>

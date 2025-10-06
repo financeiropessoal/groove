@@ -74,15 +74,15 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ userType, onClose }) 
             role="dialog"
         >
             <div 
-                className="bg-gray-800 w-full max-w-2xl rounded-lg shadow-2xl text-white transform transition-all"
+                className="bg-gray-800 w-full max-w-2xl rounded-lg shadow-2xl text-white transform transition-all flex flex-col max-h-[90vh]"
             >
-                <div className="p-8 text-center">
+                <div className="p-8 text-center flex-shrink-0">
                     <i className="fas fa-rocket text-5xl text-red-500 mb-4"></i>
                     <h2 className="text-3xl font-bold text-white">Bem-vindo(a) ao Groove Music!</h2>
                     <p className="text-gray-300 mt-2">Vamos preparar seu perfil para o sucesso. Siga estes passos recomendados:</p>
                 </div>
 
-                <div className="px-8 pb-8 space-y-4">
+                <div className="px-8 pb-8 space-y-4 overflow-y-auto flex-grow">
                     {steps.map((step, index) => (
                         <div key={index} className="bg-gray-900/50 p-4 rounded-lg flex items-center gap-4">
                             <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-gray-700 rounded-full text-red-400 text-xl">
@@ -99,7 +99,7 @@ const OnboardingModal: React.FC<OnboardingModalProps> = ({ userType, onClose }) 
                     ))}
                 </div>
 
-                <div className="bg-gray-700/50 px-6 py-4 flex justify-center rounded-b-lg">
+                <div className="bg-gray-700/50 px-6 py-4 flex justify-center rounded-b-lg flex-shrink-0">
                     <button 
                         onClick={onClose} 
                         className="px-8 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"

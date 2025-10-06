@@ -2,6 +2,7 @@ import { GigOffer, Venue, Artist } from '../data';
 import { isSupabaseConfigured, supabase } from '../supabaseClient';
 import { VenueService } from './VenueService';
 import { ArtistService } from './ArtistService';
+import { GigNotificationService } from './GigNotificationService';
 
 export interface EnrichedGig extends GigOffer {
     venue?: Venue;
@@ -84,28 +85,60 @@ export class GigService {
     }
 
     /**
-     * Books a gig for an artist.
+     * Books a gig for an artist, ensuring transactional consistency by creating a booking record.
      */
     static async bookGig(gigId: number, artistId: string): Promise<boolean> {
         if (!isSupabaseConfigured) return false;
 
-        const { error } = await supabase
+        // Step 1: Atomically update the gig offer to 'booked'
+        const { data: updatedGig, error } = await supabase
             .from('gig_offers')
             .update({ status: 'booked', booked_by_artist_id: artistId })
             .eq('id', gigId)
-            .eq('status', 'open'); // Ensure we only book an open gig
+            .eq('status', 'open') // Ensure we only book an open gig
+            .select()
+            .single();
 
-        if (error) {
-            console.error("Error booking gig:", error.message);
+        if (error || !updatedGig) {
+            console.error("Error booking gig or gig already taken:", error?.message);
             return false;
         }
 
-        // TODO: In a real app, you'd also create a corresponding 'booking' record
-        // and add the date to the artist's 'bookedDates'. This requires an RPC function
-        // for transactional safety.
+        // Step 2: Create a corresponding 'booking' record for consistency
+        const confirmation_pin = Math.floor(1000 + Math.random() * 9000).toString();
+        const { error: bookingInsertError } = await supabase
+            .from('bookings')
+            .insert([{
+                artist_id: artistId,
+                venue_id: updatedGig.venue_id,
+                plan_id: null, // Indicates an open gig booking
+                date: updatedGig.date,
+                start_time: updatedGig.start_time,
+                end_time: updatedGig.end_time,
+                payment: updatedGig.payment,
+                status: 'pending', // Payment is pending until venue pays
+                payout_status: 'pending',
+                confirmation_pin: confirmation_pin,
+                artist_checked_in: false,
+            }]);
+        
+         if (bookingInsertError) {
+            console.error("Error creating booking from open gig:", bookingInsertError.message);
+            // Rollback attempt (best effort without transactions)
+            await supabase.from('gig_offers').update({ status: 'open', booked_by_artist_id: null }).eq('id', gigId);
+            return false;
+        }
+
+        // Step 3: Add the date to the artist's 'bookedDates'
+        const artist = await ArtistService.getArtistById(artistId);
+        if (artist) {
+            const updatedBookedDates = [...new Set([...(artist.bookedDates || []), updatedGig.date])];
+            await supabase.from('artists').update({ booked_dates: updatedBookedDates }).eq('id', artistId);
+        }
         
         return true;
     }
+
 
     /**
      * Adds a new gig offer.
@@ -121,6 +154,13 @@ export class GigService {
             console.error("Error adding gig:", error.message);
             return false;
         }
+
+        // After successfully creating the gig, notify relevant artists.
+        // We run this in the background and don't await it, so the UI isn't blocked.
+        GigNotificationService.notifyRelevantArtists(gigData).catch(err => {
+            console.error("Failed to send gig notifications:", err);
+        });
+
         return true;
     }
 

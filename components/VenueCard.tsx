@@ -10,36 +10,30 @@ interface VenueCardProps {
 const VenueCard: React.FC<VenueCardProps> = ({ venue, onSelect }) => {
   return (
     <div 
-      onClick={() => onSelect(venue)} 
-      className="block bg-gray-800 rounded-lg overflow-hidden shadow-lg flex flex-col md:flex-row transform transition-all duration-300 hover:scale-[1.02] hover:shadow-red-500/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-red-500 cursor-pointer"
-      aria-label={`Ver detalhes de ${venue.name}`}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onSelect(venue)}
+      onClick={() => onSelect(venue)}
+      className="bg-gray-800 rounded-lg overflow-hidden group cursor-pointer transform transition-transform duration-300 hover:scale-105 hover:shadow-2xl"
     >
-      <img src={venue.imageUrl} alt={venue.name} className="w-full md:w-1/3 h-48 md:h-auto object-cover" loading="lazy" />
-      <div className="p-6 flex flex-col justify-between flex-grow">
-        <div>
-            <h3 className="text-2xl font-bold text-white">{venue.name}</h3>
-            <p className="text-md text-gray-400 mt-1"><i className="fas fa-map-marker-alt mr-2"></i>{venue.address}</p>
-             {venue.averageRating && typeof venue.averageRating === 'number' && venue.ratingCount ? (
-                <div className="flex items-center gap-2 mt-2">
-                    <StarRatingDisplay rating={venue.averageRating} />
-                    <span className="text-sm font-semibold text-white">{venue.averageRating.toFixed(1)}</span>
-                    <span className="text-sm text-gray-400">({venue.ratingCount} avaliações)</span>
-                </div>
-            ) : null}
+      <div className="relative pb-[66.66%]"> {/* 3:2 aspect ratio */}
+        <img src={venue.imageUrl} alt={venue.name} className="absolute h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 p-4">
+          <h3 className="font-bold text-white text-lg">{venue.name}</h3>
+          <p className="text-sm text-gray-300"><i className="fas fa-map-marker-alt text-pink-400 mr-2"></i>{venue.address}</p>
         </div>
-        {venue.musicStyles && venue.musicStyles.length > 0 && (
-          <div className="mt-4">
-            <h4 className="font-semibold text-red-500">Estilos em destaque:</h4>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {venue.musicStyles.slice(0, 3).map((style) => (
-                <span key={style} className="bg-gray-700 text-gray-200 text-sm font-medium px-3 py-1 rounded-full">{style}</span>
-              ))}
+      </div>
+      <div className="p-4">
+        <div className="flex justify-between items-center">
+            <div className="flex flex-wrap gap-2">
+                {venue.musicStyles?.slice(0, 2).map(style => (
+                    <span key={style} className="text-xs font-semibold bg-gray-700 text-gray-300 px-2 py-1 rounded-full">{style}</span>
+                ))}
             </div>
-          </div>
-        )}
+            {venue.averageRating && venue.ratingCount && (
+                <div className="flex-shrink-0 ml-2">
+                     <StarRatingDisplay rating={venue.averageRating} />
+                </div>
+            )}
+        </div>
       </div>
     </div>
   );

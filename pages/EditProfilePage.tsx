@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { GoogleGenAI } from '@google/genai';
-import { Artist } from '../data';
 import { useToast } from '../contexts/ToastContext';
-import { StorageService } from '../services/StorageService';
+import { Artist } from '../data';
+import Tooltip from '../components/Tooltip';
 
 const EditProfilePage: React.FC = () => {
-    const { artist, logout, updateArtistProfile } = useAuth();
+    const { artist, updateArtistProfile } = useAuth();
     const navigate = useNavigate();
     const { showToast } = useToast();
 
@@ -16,408 +15,206 @@ const EditProfilePage: React.FC = () => {
         primaryGenre: artist?.genre?.primary || '',
         secondaryGenres: artist?.genre?.secondary?.join(', ') || '',
         phone: artist?.phone || '',
+        city: artist?.city || '',
         bio: artist?.bio || '',
+        imageUrl: artist?.imageUrl || '',
+        youtubeVideoId: artist?.youtubeVideoId || '',
         instagram: artist?.socials?.instagram || '',
         spotify: artist?.socials?.spotify || '',
         facebook: artist?.socials?.facebook || '',
-        imageUrl: artist?.imageUrl || '',
-        youtubeVideoId: artist?.youtubeVideoId || '',
     });
-    const [youtubeUrl, setYoutubeUrl] = useState(
-      artist?.youtubeVideoId ? `https://www.youtube.com/watch?v=${artist.youtubeVideoId}` : ''
-    );
     const [isSaving, setIsSaving] = useState(false);
-    const [isImprovingBio, setIsImprovingBio] = useState(false);
-    const [aiError, setAiError] = useState('');
-    const [suggestedBio, setSuggestedBio] = useState<string | null>(null);
-    const [showAiSuggestion, setShowAiSuggestion] = useState(false);
-    
-    const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(formData.imageUrl);
-    const [isUploading, setIsUploading] = useState(false);
-
+    const [youtubeId, setYoutubeId] = useState('');
 
     if (!artist) {
-        return (
-            <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-                <p>Carregando dados do artista...</p>
-            </div>
-        );
+        return <div className="text-center py-12"><i className="fas fa-spinner fa-spin text-4xl text-pink-500"></i></div>;
     }
-    
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            if (file.size > 5 * 1024 * 1024) { // 5MB limit
-                showToast('A imagem é muito grande. O limite é de 5MB.', 'error');
-                return;
-            }
-            setProfileImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
-        }
-    };
-
-    const handleYoutubeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const url = e.target.value;
-        setYoutubeUrl(url); // Update the input field display
-
-        const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-        const match = url.match(youtubeRegex);
-        
-        if (match && match[1]) {
-            setFormData(prev => ({ ...prev, youtubeVideoId: match[1] }));
-        } else if (url.length === 11 && !url.includes('/')) {
-             setFormData(prev => ({ ...prev, youtubeVideoId: url }));
-        } else {
-             setFormData(prev => ({ ...prev, youtubeVideoId: '' })); // Clear if invalid
-        }
-    };
-
-
-    const handleImproveBioWithAI = async () => {
-        if (!formData.bio.trim()) {
-            setAiError("Por favor, escreva uma biografia antes de usar a IA.");
-            return;
-        }
-        setIsImprovingBio(true);
-        setAiError('');
-        setShowAiSuggestion(false);
-        setSuggestedBio(null);
-
+    const getYoutubeId = (url: string) => {
         try {
-            // FIX: Switched to import.meta.env with VITE_ prefix, the correct way for Vite apps.
-            // ADDED FALLBACK: Added a placeholder value for the preview environment.
-            // FIX: Re-added optional chaining (`?.`) to prevent runtime errors when `import.meta.env` is undefined.
-            const apiKey = import.meta?.env?.VITE_API_KEY || "placeholder_api_key";
-            if (!apiKey || apiKey === "placeholder_api_key") {
-                setAiError("A chave da API de IA não está configurada. Esta funcionalidade está desabilitada.");
-                setIsImprovingBio(false);
-                return;
-            }
-            const ai = new GoogleGenAI({ apiKey });
-            const prompt = `
-                Você é um especialista em marketing para músicos. Revise e melhore a biografia a seguir para o perfil de um artista em uma plataforma de contratação de shows. 
-                O objetivo é tornar o texto mais profissional, cativante e atraente para donos de bares, restaurantes e produtores de eventos.
-                Mantenha a essência e as informações originais do artista, mas aprimore a clareza, o impacto e a gramática.
-                Não adicione informações que não estão no texto original.
-                Responda em português do Brasil.
-                Retorne APENAS o texto aprimorado, sem nenhuma introdução, observação ou formatação especial como markdown.
-
-                Texto original:
-                "${formData.bio}"
-            `;
-
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-            });
-
-            const improvedBio = response.text.trim();
-            setSuggestedBio(improvedBio);
-            setShowAiSuggestion(true);
-
-        } catch (error) {
-            console.error("Erro ao chamar a API do Gemini:", error);
-            setAiError("Ocorreu um erro ao tentar melhorar o texto. Verifique sua chave de API e tente novamente.");
-        } finally {
-            setIsImprovingBio(false);
+            const urlObj = new URL(url);
+            if (urlObj.hostname === 'youtu.be') return urlObj.pathname.slice(1);
+            if (urlObj.hostname.includes('youtube.com')) return urlObj.searchParams.get('v') || '';
+        } catch (e) {
+            return url;
         }
-    };
+        return url;
+    }
+
+    useEffect(() => {
+        setYoutubeId(getYoutubeId(formData.youtubeVideoId));
+    }, [formData.youtubeVideoId]);
     
-    const handleAcceptSuggestion = () => {
-        if (suggestedBio) {
-            setFormData(prev => ({ ...prev, bio: suggestedBio }));
-        }
-        setShowAiSuggestion(false);
-        setSuggestedBio(null);
-    };
-
-    const handleDiscardSuggestion = () => {
-        setShowAiSuggestion(false);
-        setSuggestedBio(null);
-    };
-
+    const genreTags = useMemo(() => {
+        return formData.secondaryGenres.split(',').map(s => s.trim()).filter(Boolean);
+    }, [formData.secondaryGenres]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSaving(true);
         
-        let uploadedImageUrl = formData.imageUrl;
-    
-        if (profileImageFile) {
-            setIsUploading(true);
-            const filePath = `artists/${artist.id}/profile.jpg`;
-            const publicUrl = await StorageService.uploadFile(profileImageFile, filePath);
-            setIsUploading(false);
-            if (publicUrl) {
-                uploadedImageUrl = publicUrl;
-            } else {
-                showToast("Erro ao fazer upload da imagem de perfil. Tente novamente.", 'error');
-                setIsSaving(false);
-                return;
-            }
-        }
-        
-        const artistUpdatePayload: Partial<Artist> = {
+        const updatePayload: Partial<Artist> = {
             name: formData.name,
-            phone: formData.phone,
             genre: {
                 primary: formData.primaryGenre,
-                secondary: formData.secondaryGenres.split(',').map(g => g.trim()).filter(Boolean),
+                secondary: formData.secondaryGenres.split(',').map(s => s.trim()).filter(Boolean)
             },
+            phone: formData.phone,
+            city: formData.city,
             bio: formData.bio,
+            imageUrl: formData.imageUrl,
+            youtubeVideoId: getYoutubeId(formData.youtubeVideoId),
             socials: {
                 instagram: formData.instagram,
                 spotify: formData.spotify,
-                facebook: formData.facebook,
-            },
-            imageUrl: uploadedImageUrl,
-            youtubeVideoId: formData.youtubeVideoId,
+                facebook: formData.facebook
+            }
         };
 
         try {
-            await updateArtistProfile(artistUpdatePayload);
+            await updateArtistProfile(updatePayload);
             showToast("Perfil atualizado com sucesso!", 'success');
             navigate('/dashboard');
         } catch (error) {
-            showToast("Ocorreu um erro ao salvar. Tente novamente.", 'error');
-            console.error("Failed to save profile:", error);
+            showToast("Ocorreu um erro ao salvar.", 'error');
         } finally {
             setIsSaving(false);
         }
     };
 
-    const FormInput: React.FC<{label: string, name: string, value: string, placeholder?: string}> = ({ label, name, value, placeholder }) => (
-         <div>
-            <label htmlFor={name} className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
-            <input
-                id={name}
-                name={name}
-                type="text"
-                value={value}
-                onChange={handleChange}
-                placeholder={placeholder}
-                className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-            />
-        </div>
-    );
-
     return (
-        <div className="min-h-screen bg-gray-900 text-white">
-            <header className="bg-gray-800 shadow-md">
-                 <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                         <Link to="/dashboard" className="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700">
-                             <i className="fas fa-arrow-left"></i>
-                         </Link>
-                        <h1 className="text-xl font-bold tracking-wider">Editar Perfil</h1>
+        <div className="max-w-4xl mx-auto">
+             <form onSubmit={handleSubmit}>
+                <div className="flex flex-col md:flex-row justify-between md:items-center mb-8 gap-4">
+                    <div className="flex items-center gap-4">
+                        <Link to="/dashboard" className="text-gray-400 hover:text-white transition-colors" aria-label="Voltar ao painel">
+                            <i className="fas fa-arrow-left text-2xl"></i>
+                        </Link>
+                        <div>
+                            <h1 className="text-3xl font-bold">Editar Perfil da Banda/Artista</h1>
+                            <p className="text-gray-400">Gerencie as informações públicas da sua banda.</p>
+                        </div>
                     </div>
-                     <button onClick={logout} className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-semibold hover:bg-red-600 transition-colors">
-                        <i className="fas fa-sign-out-alt"></i>
-                        <span>Sair</span>
-                     </button>
+                    <div className="flex gap-4">
+                        <button type="button" onClick={() => navigate('/dashboard')} className="px-6 py-2 bg-gray-600 rounded-lg font-semibold hover:bg-gray-500 transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" disabled={isSaving} className="px-6 py-2 bg-pink-600 rounded-lg font-semibold hover:bg-pink-700 disabled:bg-gray-500 flex items-center gap-2">
+                             {isSaving ? <><i className="fas fa-spinner fa-spin"></i>Salvando...</> : 'Salvar Alterações'}
+                        </button>
+                    </div>
                 </div>
-            </header>
 
-            <main className="container mx-auto px-4 py-8">
-                <div className="max-w-4xl mx-auto bg-gray-800/50 p-8 rounded-lg">
-                    <form onSubmit={handleSubmit} className="space-y-8">
-                        <div>
-                            <h2 className="text-2xl font-bold text-white mb-2">Imagem de Perfil</h2>
-                            <p className="text-sm text-gray-400 -mt-2 mb-6">Esta é a imagem principal que aparece no seu card de artista.</p>
-                            <div className="flex flex-col sm:flex-row items-center gap-6">
-                                <div className="relative w-32 h-44 shrink-0">
-                                    {imagePreview ? (
-                                        <img src={imagePreview} alt="Pré-visualização do perfil" className="w-full h-full object-cover rounded-lg shadow-md bg-gray-900" />
-                                    ) : (
-                                        <div className="w-full h-full bg-gray-900 rounded-lg flex flex-col items-center justify-center text-center p-2">
-                                            <i className="fas fa-image text-4xl text-gray-600"></i>
-                                            <span className="text-xs text-gray-500 mt-2">Sem imagem</span>
-                                        </div>
-                                    )}
-                                    {isUploading && (
-                                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center rounded-lg">
-                                            <i className="fas fa-spinner fa-spin text-2xl text-white"></i>
-                                        </div>
-                                    )}
+                <div className="space-y-8">
+                    <div className="bg-gray-800 p-6 rounded-lg">
+                        <div className="flex items-center gap-3 mb-4">
+                            <h2 className="text-xl font-bold flex items-center gap-2">
+                                <i className="fas fa-id-card text-pink-400"></i>
+                                Informações da Banda
+                            </h2>
+                            <Tooltip text="Dados essenciais para que os contratantes encontrem e identifiquem sua banda ou projeto.">
+                                <i className="fas fa-question-circle text-gray-400 cursor-help"></i>
+                            </Tooltip>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Nome da Banda / Artístico</label>
+                                <input name="name" value={formData.name} onChange={handleChange} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 focus:ring-2 focus:ring-pink-500 focus:outline-none" required />
+                            </div>
+                             <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Sua Cidade</label>
+                                <input name="city" value={formData.city} onChange={handleChange} placeholder="Ex: São Paulo, SP" className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 focus:ring-2 focus:ring-pink-500 focus:outline-none" required />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Gênero Principal</label>
+                                    <input name="primaryGenre" value={formData.primaryGenre} onChange={handleChange} placeholder="Ex: Rock, MPB, Samba" className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 focus:ring-2 focus:ring-pink-500 focus:outline-none" required />
                                 </div>
                                 <div>
-                                    <label htmlFor="imageUpload" className="cursor-pointer bg-gray-700 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-md transition-colors">
-                                        {imagePreview ? 'Trocar Imagem' : 'Escolher Imagem'}
-                                    </label>
-                                    <input
-                                        id="imageUpload"
-                                        name="imageUpload"
-                                        type="file"
-                                        accept="image/png, image/jpeg, image/webp"
-                                        onChange={handleImageChange}
-                                        className="hidden"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-2">
-                                        Use uma imagem vertical (retrato) para melhor resultado. Máx 5MB.
-                                    </p>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Gêneros Secundários (separados por vírgula)</label>
+                                    <input name="secondaryGenres" value={formData.secondaryGenres} onChange={handleChange} placeholder="Ex: Indie, Pop Rock, Soul" className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 focus:ring-2 focus:ring-pink-500 focus:outline-none" />
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="pt-8 border-t border-gray-700">
-                            <h2 className="text-2xl font-bold text-white mb-2">Informações Públicas</h2>
-                            <p className="text-sm text-gray-400 -mt-2 mb-6">Estes dados serão exibidos em sua página de artista.</p>
-                            <div className="space-y-6">
-                                <FormInput label="Nome do Artista / Banda" name="name" value={formData.name} />
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-2">Telefone / WhatsApp</label>
-                                        <input
-                                            id="phone"
-                                            name="phone"
-                                            type="tel"
-                                            value={formData.phone}
-                                            onChange={handleChange}
-                                            placeholder="(XX) XXXXX-XXXX"
-                                            className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label htmlFor="primaryGenre" className="block text-sm font-medium text-gray-300 mb-2">Gênero Principal</label>
-                                        <input
-                                            id="primaryGenre"
-                                            name="primaryGenre"
-                                            type="text"
-                                            value={formData.primaryGenre}
-                                            onChange={handleChange}
-                                            placeholder="Ex: MPB"
-                                            className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label htmlFor="secondaryGenres" className="block text-sm font-medium text-gray-300 mb-2">Outros Gêneros (separados por vírgula)</label>
-                                    <input
-                                        id="secondaryGenres"
-                                        name="secondaryGenres"
-                                        type="text"
-                                        value={formData.secondaryGenres}
-                                        onChange={handleChange}
-                                        placeholder="Ex: Pop Rock, Samba Rock"
-                                        className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <label htmlFor="bio" className="block text-sm font-medium text-gray-300">Bio / Sobre</label>
-                                <button 
-                                    type="button"
-                                    onClick={handleImproveBioWithAI}
-                                    disabled={isImprovingBio || showAiSuggestion}
-                                    className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700 transition-colors disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-wait flex items-center gap-2"
-                                >
-                                    {isImprovingBio ? (
-                                        <>
-                                            <i className="fas fa-spinner fa-spin"></i>
-                                            <span>Aprimorando...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <i className="fas fa-magic"></i>
-                                            <span>Ajustar com IA</span>
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                            <textarea
-                                id="bio"
-                                name="bio"
-                                value={formData.bio}
-                                onChange={handleChange}
-                                readOnly={isImprovingBio || showAiSuggestion}
-                                rows={6}
-                                className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
-                                placeholder="Conte a sua história, sua trajetória na música..."
-                            />
-                            {aiError && <p className="text-red-400 text-xs mt-2">{aiError}</p>}
-                             {showAiSuggestion && suggestedBio && (
-                                <div className="mt-4 p-4 bg-gray-700 rounded-lg border border-red-500/50 animate-fade-in">
-                                    <h4 className="text-lg font-semibold text-white mb-3">Sugestão da IA</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <h5 className="text-sm font-bold text-gray-400 mb-2">Seu Texto Original</h5>
-                                            <div className="text-sm bg-gray-800 p-3 rounded-md whitespace-pre-line h-48 overflow-y-auto text-gray-300">{formData.bio}</div>
-                                        </div>
-                                        <div>
-                                            <h5 className="text-sm font-bold text-green-400 mb-2">Texto Aprimorado</h5>
-                                            <div className="text-sm bg-gray-800 p-3 rounded-md whitespace-pre-line h-48 overflow-y-auto">{suggestedBio}</div>
-                                        </div>
-                                    </div>
-                                    <div className="flex justify-end gap-4 mt-4">
-                                        <button type="button" onClick={handleDiscardSuggestion} className="px-4 py-2 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-500 transition-colors text-sm">
-                                            Descartar
-                                        </button>
-                                        <button type="button" onClick={handleAcceptSuggestion} className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors text-sm flex items-center gap-2">
-                                            <i className="fas fa-check"></i>
-                                            Aceitar Sugestão
-                                        </button>
-                                    </div>
+                            {genreTags.length > 0 && (
+                                <div className="flex flex-wrap gap-2 pt-2">
+                                    {genreTags.map(tag => (
+                                        <span key={tag} className="bg-gray-700 text-gray-200 text-xs font-medium px-2.5 py-1 rounded-full">{tag}</span>
+                                    ))}
                                 </div>
                             )}
                         </div>
-                        
-                        <div>
-                            <label htmlFor="youtubeUrl" className="block text-sm font-medium text-gray-300 mb-2">Vídeo em Destaque (YouTube)</label>
-                            <input
-                                id="youtubeUrl"
-                                name="youtubeUrl"
-                                type="url"
-                                value={youtubeUrl}
-                                onChange={handleYoutubeChange}
-                                placeholder="Cole o link completo do seu vídeo do YouTube"
-                                className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
-                            />
-                            <p className="text-xs text-gray-500 mt-2">
-                                Cole o link completo (ex: https://www.youtube.com/watch?v=c2-a_H_a2-Y). O sistema extrairá o ID do vídeo automaticamente.
-                            </p>
+                    </div>
+                    
+                    <div className="bg-gray-800 p-6 rounded-lg">
+                         <div className="flex items-center gap-3 mb-4">
+                             <h2 className="text-xl font-bold flex items-center gap-2">
+                                <i className="fas fa-photo-video text-pink-400"></i>
+                                Mídia e Apresentação
+                            </h2>
+                             <Tooltip text="Sua vitrine! Uma boa foto, um vídeo de performance e uma bio bem escrita são essenciais para chamar a atenção.">
+                                <i className="fas fa-question-circle text-gray-400 cursor-help"></i>
+                            </Tooltip>
                         </div>
-
-                        <div className="pt-6 border-t border-gray-700">
-                             <h2 className="text-xl font-bold text-white mb-2">Redes Sociais</h2>
-                             <p className="text-sm text-gray-400 -mt-2 mb-6">Links para seus perfis. Deixe em branco se não tiver.</p>
-                             <div className="space-y-4">
-                                <FormInput label="Instagram URL" name="instagram" value={formData.instagram} placeholder="https://instagram.com/seu-usuario" />
-                                <FormInput label="Spotify URL" name="spotify" value={formData.spotify} placeholder="https://open.spotify.com/artist/..." />
-                                <FormInput label="Facebook URL" name="facebook" value={formData.facebook} placeholder="https://facebook.com/sua-pagina" />
-                             </div>
+                         <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Sua Bio</label>
+                                <textarea name="bio" value={formData.bio} onChange={handleChange} rows={5} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 focus:ring-2 focus:ring-pink-500 focus:outline-none" placeholder="Fale sobre sua história, influências e o que torna seu show especial." />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">URL da sua foto de perfil</label>
+                                <input name="imageUrl" value={formData.imageUrl} onChange={handleChange} placeholder="https://..." className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 focus:ring-2 focus:ring-pink-500 focus:outline-none" />
+                            </div>
+                             <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Link ou ID de vídeo do YouTube</label>
+                                <div className="flex flex-col sm:flex-row gap-4 items-start">
+                                    <input name="youtubeVideoId" value={formData.youtubeVideoId} onChange={handleChange} placeholder="Cole a URL ou ID do vídeo" className="flex-grow w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 focus:ring-2 focus:ring-pink-500 focus:outline-none" />
+                                    {youtubeId && (
+                                        <div className="flex-shrink-0 w-full sm:w-40">
+                                            <img src={`https://img.youtube.com/vi/${youtubeId}/mqdefault.jpg`} alt="YouTube video preview" className="rounded-lg w-full aspect-video object-cover bg-gray-900"/>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-
-                        <div className="flex justify-end gap-4 pt-6 border-t border-gray-700">
-                            <button type="button" onClick={() => navigate('/dashboard')} className="px-6 py-2 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-500 transition-colors">
-                                Cancelar
-                            </button>
-                            <button
-                                type="submit"
-                                disabled={isSaving}
-                                className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors disabled:bg-gray-500 disabled:cursor-wait flex items-center gap-2"
-                            >
-                               {isSaving ? (
-                                   <>
-                                       <i className="fas fa-spinner fa-spin"></i>
-                                       <span>Salvando...</span>
-                                   </>
-                               ) : (
-                                   'Salvar Alterações'
-                               )}
-                            </button>
+                    </div>
+                     <div className="bg-gray-800 p-6 rounded-lg">
+                         <div className="flex items-center gap-3 mb-4">
+                             <h2 className="text-xl font-bold flex items-center gap-2">
+                                <i className="fas fa-share-alt text-pink-400"></i>
+                                Contato e Redes Sociais
+                            </h2>
+                             <Tooltip text="Facilite para os contratantes te encontrarem fora da plataforma e para a equipe de produção entrar em contato.">
+                                <i className="fas fa-question-circle text-gray-400 cursor-help"></i>
+                            </Tooltip>
                         </div>
-                    </form>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Telefone de Contato (Produção)</label>
+                                <input name="phone" value={formData.phone} onChange={handleChange} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 focus:ring-2 focus:ring-pink-500 focus:outline-none" />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Instagram URL</label>
+                                    <input name="instagram" value={formData.instagram} onChange={handleChange} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 focus:ring-2 focus:ring-pink-500 focus:outline-none" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Spotify URL</label>
+                                    <input name="spotify" value={formData.spotify} onChange={handleChange} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 focus:ring-2 focus:ring-pink-500 focus:outline-none" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Facebook URL</label>
+                                    <input name="facebook" value={formData.facebook} onChange={handleChange} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 focus:ring-2 focus:ring-pink-500 focus:outline-none" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </main>
+            </form>
         </div>
     );
 };

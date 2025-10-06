@@ -1,92 +1,155 @@
 import React, { useState, useEffect } from 'react';
 import { PlatformTransaction } from '../../types';
+import { AdminService } from '../../services/AdminService';
+import { useToast } from '../../contexts/ToastContext';
 
 interface PlatformTransactionModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (transaction: Omit<PlatformTransaction, 'id' | 'created_at'>) => void;
-    type: 'income' | 'expense';
-    transactionToEdit?: PlatformTransaction;
+    onSave: () => void;
+    transaction: PlatformTransaction | null;
 }
 
-const PlatformTransactionModal: React.FC<PlatformTransactionModalProps> = ({ isOpen, onClose, onSave, type, transactionToEdit }) => {
-    const [description, setDescription] = useState('');
-    const [category, setCategory] = useState('');
-    const [value, setValue] = useState<number | ''>('');
-    const [dueDate, setDueDate] = useState('');
-    const [status, setStatus] = useState<'pending' | 'paid'>('pending');
-    
-    const isEditing = !!transactionToEdit;
+const PlatformTransactionModal: React.FC<PlatformTransactionModalProps> = ({ isOpen, onClose, onSave, transaction }) => {
+    const [formData, setFormData] = useState({
+        description: '',
+        type: 'expense' as 'income' | 'expense',
+        category: '',
+        value: 0,
+        status: 'pending' as 'pending' | 'paid',
+        due_date: new Date().toISOString().split('T')[0],
+    });
+    const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const { showToast } = useToast();
 
     useEffect(() => {
-        if (isOpen) {
-            if (transactionToEdit) {
-                setDescription(transactionToEdit.description);
-                setCategory(transactionToEdit.category);
-                setValue(transactionToEdit.value);
-                setDueDate(transactionToEdit.due_date || '');
-                setStatus(transactionToEdit.status);
-            } else {
-                // Reset form
-                setDescription('');
-                setCategory(type === 'expense' ? 'Infraestrutura' : 'Outros');
-                setValue('');
-                setDueDate(new Date().toISOString().split('T')[0]);
-                setStatus('pending');
-            }
-        }
-    }, [isOpen, transactionToEdit, type]);
-
-    if (!isOpen) return null;
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (description && value) {
-            onSave({
-                description,
-                category,
-                value: Number(value),
-                status,
-                due_date: dueDate || undefined,
-                type: isEditing ? transactionToEdit.type : type,
+        if (transaction) {
+            setFormData({
+                description: transaction.description,
+                type: transaction.type,
+                category: transaction.category,
+                value: transaction.value,
+                status: transaction.status,
+                due_date: (transaction.due_date || transaction.created_at).split('T')[0],
             });
+        } else {
+            // Reset for new transaction
+             setFormData({
+                description: '',
+                type: 'expense',
+                category: '',
+                value: 0,
+                status: 'pending',
+                due_date: new Date().toISOString().split('T')[0],
+            });
+        }
+    }, [transaction, isOpen]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: name === 'value' ? parseFloat(value) || 0 : value }));
+    };
+
+    const handleSubmit = async () => {
+        setIsSaving(true);
+        let success = false;
+        if (transaction) {
+            const result = await AdminService.updatePlatformTransaction(transaction.id, formData);
+            success = !!result;
+        } else {
+            const result = await AdminService.addPlatformTransaction(formData);
+            success = !!result;
+        }
+        setIsSaving(false);
+
+        if (success) {
+            showToast('Transação salva!', 'success');
+            onSave();
+        } else {
+            showToast('Erro ao salvar.', 'error');
         }
     };
     
-    const expenseCategories = ['Infraestrutura', 'Marketing', 'Salários', 'Impostos', 'Outros'];
-    const incomeCategories = ['Investimento', 'Venda de Ativos', 'Outros'];
-    const currentCategories = (isEditing ? transactionToEdit.type : type) === 'expense' ? expenseCategories : incomeCategories;
+    const handleDelete = async () => {
+        if (transaction && window.confirm('Tem certeza que deseja excluir esta transação?')) {
+            setIsDeleting(true);
+            const success = await AdminService.deletePlatformTransaction(transaction.id);
+            setIsDeleting(false);
+            if (success) {
+                showToast('Transação excluída!', 'success');
+                onSave();
+            } else {
+                showToast('Erro ao excluir.', 'error');
+            }
+        }
+    }
+
+    if (!isOpen) return null;
+    
+    // Simple category suggestions
+    const categories = formData.type === 'income' 
+        ? ['Comissão de Show', 'Assinatura PRO', 'Outra Receita']
+        : ['Marketing', 'Servidores', 'Taxas', 'Salários', 'Outra Despesa'];
 
     return (
         <div className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-gray-800 w-full max-w-lg rounded-lg shadow-2xl" onClick={e => e.stopPropagation()}>
-                <form onSubmit={handleSubmit}>
-                    <div className="p-6">
-                        <h3 className="text-xl font-bold text-white mb-4">{isEditing ? 'Editar' : 'Adicionar'} {isEditing ? (transactionToEdit.type === 'income' ? 'Receita' : 'Despesa') : (type === 'income' ? 'Receita' : 'Despesa')}</h3>
-                        <div className="space-y-4">
-                            <input type="text" value={description} onChange={e => setDescription(e.target.value)} placeholder="Descrição do Lançamento" required className="w-full bg-gray-900 border border-gray-700 rounded p-2" />
-                            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full bg-gray-900 border border-gray-700 rounded p-2">
-                                {currentCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                            </select>
-                            <input type="number" value={value} onChange={e => setValue(e.target.value ? parseFloat(e.target.value) : '')} placeholder="Valor (R$)" required min="0.01" step="0.01" className="w-full bg-gray-900 border border-gray-700 rounded p-2" />
-                             <div>
-                                <label className="text-xs text-gray-400">Data de Vencimento/Competência</label>
-                                <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required className="w-full bg-gray-900 border border-gray-700 rounded p-2 mt-1" />
-                            </div>
-                            <div>
-                                <label className="text-xs text-gray-400">Status</label>
-                                <select value={status} onChange={e => setStatus(e.target.value as 'pending' | 'paid')} className="w-full bg-gray-900 border border-gray-700 rounded p-2 mt-1">
-                                    <option value="pending">Pendente</option>
-                                    <option value="paid">Pago/Recebido</option>
-                                </select>
-                            </div>
+            <div className="bg-gray-800 p-6 rounded-lg w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
+                <h2 className="text-2xl font-bold mb-6">{transaction ? 'Editar' : 'Adicionar'} Transação</h2>
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-sm font-medium text-gray-400">Descrição</label>
+                        <input name="description" value={formData.description} onChange={handleChange} className="w-full bg-gray-900 p-2 rounded mt-1 border border-gray-700" />
+                    </div>
+                     <div className="grid grid-cols-2 gap-4">
+                        <div>
+                           <label className="text-sm font-medium text-gray-400">Tipo</label>
+                           <select name="type" value={formData.type} onChange={handleChange} className="w-full bg-gray-900 p-2 rounded mt-1 border border-gray-700">
+                               <option value="expense">Despesa</option>
+                               <option value="income">Receita</option>
+                           </select>
+                       </div>
+                       <div>
+                           <label className="text-sm font-medium text-gray-400">Valor (R$)</label>
+                           <input name="value" type="number" step="0.01" value={formData.value} onChange={handleChange} className="w-full bg-gray-900 p-2 rounded mt-1 border border-gray-700" />
+                       </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                         <div>
+                            <label className="text-sm font-medium text-gray-400">Categoria</label>
+                            <input list="categories" name="category" value={formData.category} onChange={handleChange} className="w-full bg-gray-900 p-2 rounded mt-1 border border-gray-700" />
+                            <datalist id="categories">
+                                {categories.map(cat => <option key={cat} value={cat} />)}
+                            </datalist>
                         </div>
+                        <div>
+                           <label className="text-sm font-medium text-gray-400">Status</label>
+                           <select name="status" value={formData.status} onChange={handleChange} className="w-full bg-gray-900 p-2 rounded mt-1 border border-gray-700">
+                               <option value="pending">Pendente</option>
+                               <option value="paid">Pago</option>
+                           </select>
+                       </div>
                     </div>
-                    <div className="bg-gray-700/50 px-6 py-4 flex justify-end gap-4 rounded-b-lg">
-                        <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-600 rounded">Cancelar</button>
-                        <button type="submit" className="px-4 py-2 bg-red-600 rounded">Salvar</button>
+                     <div>
+                        <label className="text-sm font-medium text-gray-400">Data de Vencimento/Pagamento</label>
+                        <input type="date" name="due_date" value={formData.due_date} onChange={handleChange} className="w-full bg-gray-900 p-2 rounded mt-1 border border-gray-700" />
                     </div>
-                </form>
+                </div>
+                <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-700">
+                     <div>
+                        {transaction && (
+                            <button onClick={handleDelete} disabled={isDeleting} className="text-red-500 hover:text-red-400 text-sm disabled:opacity-50">
+                                {isDeleting ? 'Excluindo...' : 'Excluir Transação'}
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex gap-4">
+                        <button onClick={onClose} className="bg-gray-600 px-4 py-2 rounded font-semibold">Cancelar</button>
+                        <button onClick={handleSubmit} disabled={isSaving} className="bg-pink-600 px-4 py-2 rounded font-semibold disabled:opacity-50">
+                            {isSaving ? 'Salvando...' : 'Salvar'}
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );

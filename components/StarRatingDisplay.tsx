@@ -1,27 +1,22 @@
-import React, { memo } from 'react';
+import React from 'react';
 
 interface StarRatingDisplayProps {
   rating: number;
-  totalStars?: number;
-  size?: string;
 }
 
-const StarRatingDisplay: React.FC<StarRatingDisplayProps> = ({ rating, totalStars = 5, size = 'text-lg' }) => {
-  const fullStars = Math.floor(rating);
-  const halfStar = rating % 1 >= 0.5 ? 1 : 0;
-  const emptyStars = totalStars - fullStars - halfStar;
-
+const StarRatingDisplay: React.FC<StarRatingDisplayProps> = ({ rating }) => {
   return (
-    <div className="flex items-center text-yellow-400">
-      {[...Array(fullStars)].map((_, i) => (
-        <i key={`full-${i}`} className={`fas fa-star ${size}`}></i>
-      ))}
-      {halfStar === 1 && <i key="half" className={`fas fa-star-half-alt ${size}`}></i>}
-      {[...Array(emptyStars)].map((_, i) => (
-        <i key={`empty-${i}`} className={`far fa-star ${size} text-gray-600`}></i>
-      ))}
+    <div className="flex items-center">
+      {[...Array(5)].map((_, index) => {
+        const ratingValue = index + 1;
+        return (
+          <span key={ratingValue} className={`text-sm ${ratingValue <= Math.round(rating) ? 'text-yellow-400' : 'text-gray-600'}`}>
+            &#9733;
+          </span>
+        );
+      })}
     </div>
   );
 };
 
-export default memo(StarRatingDisplay);
+export default StarRatingDisplay;

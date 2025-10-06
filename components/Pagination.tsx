@@ -53,7 +53,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalItems, itemsP
   }
 
   const commonButtonClasses = "px-4 py-2 rounded-md transition-colors duration-200 text-sm font-semibold";
-  const activeClasses = "bg-red-600 text-white";
+  const activeClasses = "bg-gradient-to-r from-pink-500 to-orange-500 text-white";
   const inactiveClasses = "bg-gray-800 text-gray-300 hover:bg-gray-700";
   const disabledClasses = "bg-gray-800 text-gray-500 cursor-not-allowed";
 

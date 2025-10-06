@@ -87,7 +87,7 @@ const Header: React.FC = () => {
   const inactiveClasses = "text-gray-400 hover:text-white";
 
   const mobileNavButtonClasses = "block w-full text-left px-4 py-3 rounded-md text-base font-medium transition-colors duration-300";
-  const mobileActiveClasses = "bg-red-600 text-white";
+  const mobileActiveClasses = "bg-gradient-to-r from-pink-500 to-orange-500 text-white";
   const mobileInactiveClasses = "text-gray-300 hover:bg-gray-700 hover:text-white";
 
   const isAuthenticated = isArtistAuthenticated || isVenueAuthenticated;
@@ -128,10 +128,10 @@ const Header: React.FC = () => {
        return (
          <div className="flex items-center space-x-2">
             {commonButtons}
-            <Link to="/venue-dashboard" className="px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">
+            <Link to="/venue-dashboard" className="px-4 py-2.5 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-lg text-sm font-semibold hover:shadow-[0_0_15px_rgba(236,72,153,0.7)] transition-shadow">
                 Meu Painel
             </Link>
-            <button onClick={venueLogout} className="text-gray-300 hover:text-white transition-colors hidden sm:block" aria-label="Sair">
+            <button onClick={handleLogout} className="text-gray-300 hover:text-white transition-colors hidden sm:block" aria-label="Sair">
                 <i className="fas fa-sign-out-alt text-lg"></i>
             </button>
          </div>
@@ -142,10 +142,10 @@ const Header: React.FC = () => {
          return (
              <div className="flex items-center space-x-2">
                 {commonButtons}
-                <Link to="/dashboard" className="px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">
+                <Link to="/dashboard" className="px-4 py-2.5 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-lg text-sm font-semibold hover:shadow-[0_0_15px_rgba(236,72,153,0.7)] transition-shadow">
                     Meu Painel
                 </Link>
-                <button onClick={artistLogout} className="text-gray-300 hover:text-white transition-colors hidden sm:block" aria-label="Sair">
+                <button onClick={handleLogout} className="text-gray-300 hover:text-white transition-colors hidden sm:block" aria-label="Sair">
                     <i className="fas fa-sign-out-alt text-lg"></i>
                 </button>
              </div>
@@ -153,7 +153,7 @@ const Header: React.FC = () => {
     }
 
     return (
-        <Link to="/login" className="px-4 py-2.5 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors">
+        <Link to="/login" className="px-4 py-2.5 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-lg text-sm font-semibold hover:shadow-[0_0_15px_rgba(236,72,153,0.7)] transition-shadow">
             Área do Artista
         </Link>
     );
@@ -163,7 +163,7 @@ const Header: React.FC = () => {
     <header className="bg-gray-800 shadow-lg relative z-30">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <Link to="/" className="flex items-center space-x-3" onClick={() => setIsMobileMenuOpen(false)}>
-          <i className="fas fa-wave-square text-red-500 text-2xl"></i>
+          <i className="fas fa-wave-square text-pink-500 text-2xl"></i>
           <h1 className="text-xl font-bold tracking-wider">Groove Music</h1>
         </Link>
         
@@ -182,6 +182,12 @@ const Header: React.FC = () => {
               className={({ isActive }) => `${navButtonClasses} ${isActive ? activeClasses : inactiveClasses}`}
             >
               Artistas
+            </NavLink>
+            <NavLink
+              to="/musician-login"
+              className={({ isActive }) => `${navButtonClasses} ${isActive ? activeClasses : inactiveClasses}`}
+            >
+              Músicos
             </NavLink>
             <NavLink
               to="/how-it-works"
@@ -242,6 +248,13 @@ const Header: React.FC = () => {
                     className={({ isActive }) => `${mobileNavButtonClasses} ${isActive ? mobileActiveClasses : mobileInactiveClasses}`}
                     >
                     Artistas
+                </NavLink>
+                <NavLink
+                    to="/musician-login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={({ isActive }) => `${mobileNavButtonClasses} ${isActive ? mobileActiveClasses : mobileInactiveClasses}`}
+                    >
+                    Músicos
                 </NavLink>
                 <NavLink
                     to="/how-it-works"

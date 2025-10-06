@@ -1,5 +1,6 @@
 import React from 'react';
-import { Song } from '../data';
+// FIX: The Song type is exported from `types.ts`, not `data.ts`.
+import { Song } from '../types';
 import Modal from './Modal';
 
 interface SongDetailModalProps {

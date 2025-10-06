@@ -1,13 +1,12 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import ArtistCard from './ArtistCard';
 import FilterModal from './FilterModal';
-// FIX: Corrected import path for ArtistDetailPanel component. It was pointing to an empty file.
 import ArtistDetailPanel from './ArtistDetailPanel';
 import { Artist } from '../data';
 import { ArtistService } from '../services/ArtistService';
-import SlidingPanel from './SlidingPanel';
 import Pagination from './Pagination';
+import SlidingPanel from './SlidingPanel';
 
 
 type SortOrder = 'default' | 'name-asc' | 'name-desc' | 'genre-asc' | 'genre-desc';
@@ -16,13 +15,14 @@ const ITEMS_PER_PAGE = 12;
 const ArtistGrid: React.FC = () => {
   const [allArtists, setAllArtists] = useState<Artist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState('Todos');
+  const [searchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '');
+  const [selectedGenre, setSelectedGenre] = useState(searchParams.get('genre') || 'Todos');
   const [selectedDate, setSelectedDate] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('default');
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   const params = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [selectedArtist, setSelectedArtist] = useState<Artist | null>(null);
@@ -36,15 +36,18 @@ const ArtistGrid: React.FC = () => {
     };
     fetchArtists();
   }, []);
-
+  
   useEffect(() => {
     if (params.id && allArtists.length > 0) {
-        const artist = allArtists.find(a => a.id === params.id);
-        if (artist) {
-            setSelectedArtist(artist);
-        } else {
-            navigate('/artists', { replace: true });
-        }
+        const getFullDetails = async () => {
+            const fullArtist = await ArtistService.getArtistById(params.id!);
+            if (fullArtist) {
+                setSelectedArtist(fullArtist);
+            } else {
+                navigate('/artists', { replace: true });
+            }
+        };
+        getFullDetails();
     } else {
         setSelectedArtist(null);
     }
@@ -55,7 +58,7 @@ const ArtistGrid: React.FC = () => {
   }, [navigate]);
 
   const handleClosePanel = useCallback(() => {
-      navigate('/artists');
+    navigate('/artists');
   }, [navigate]);
 
 
@@ -147,7 +150,7 @@ const ArtistGrid: React.FC = () => {
   return (
     <div>
         <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-            <h2 className="text-3xl font-bold text-red-500 shrink-0">Nossos Artistas</h2>
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-pink-500 to-orange-500 bg-clip-text text-transparent">Nossos Artistas</h2>
         </div>
       
       {/* Desktop Filter Bar */}
@@ -159,7 +162,7 @@ const ArtistGrid: React.FC = () => {
                     placeholder="Buscar por nome do artista..."
                     value={searchTerm}
                     onChange={(e) => handleFilterChange(setSearchTerm)(e.target.value)}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 pl-10 text-white focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors"
                     aria-label="Buscar artista por nome"
                 />
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -170,7 +173,7 @@ const ArtistGrid: React.FC = () => {
                 <select
                     value={selectedGenre}
                     onChange={(e) => handleFilterChange(setSelectedGenre)(e.target.value)}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-red-500 appearance-none transition-colors"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-pink-500 appearance-none transition-colors"
                     aria-label="Filtrar por gênero"
                 >
                     {genres.map(genre => (
@@ -187,7 +190,7 @@ const ArtistGrid: React.FC = () => {
                     value={selectedDate}
                     onChange={(e) => handleFilterChange(setSelectedDate)(e.target.value)}
                     min={today}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 text-white focus:outline-none focus:ring-2 focus:ring-pink-500 transition-colors"
                     aria-label="Filtrar por data de disponibilidade"
                  />
             </div>
@@ -195,7 +198,7 @@ const ArtistGrid: React.FC = () => {
                 <select
                     value={sortOrder}
                     onChange={(e) => handleFilterChange(setSortOrder)(e.target.value as SortOrder)}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-red-500 appearance-none transition-colors"
+                    className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 pr-10 text-white focus:outline-none focus:ring-2 focus:ring-pink-500 appearance-none transition-colors"
                     aria-label="Ordenar artistas"
                 >
                     <option value="default" disabled>Ordenar por...</option>
@@ -231,7 +234,7 @@ const ArtistGrid: React.FC = () => {
           <i className="fas fa-sliders-h"></i>
           Filtrar e Ordenar
           {hasActiveFilters && (
-            <span className="absolute -top-2 -right-2 w-6 h-6 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-gray-900">
+            <span className="absolute -top-2 -right-2 w-6 h-6 bg-pink-600 text-white text-xs font-bold rounded-full flex items-center justify-center border-2 border-gray-900">
               {activeFilterCount}
             </span>
           )}
@@ -240,7 +243,7 @@ const ArtistGrid: React.FC = () => {
 
       {isLoading ? (
         <div className="text-center py-12">
-            <i className="fas fa-spinner fa-spin text-4xl text-red-500"></i>
+            <i className="fas fa-spinner fa-spin text-4xl text-pink-500"></i>
             <p className="text-gray-300 mt-4">Carregando artistas...</p>
         </div>
       ) : hasArtists ? (
@@ -264,7 +267,7 @@ const ArtistGrid: React.FC = () => {
            {hasActiveFilters && (
              <button
                 onClick={handleClearFilters}
-                className="mt-6 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-md transition-colors"
+                className="mt-6 bg-gradient-to-r from-pink-500 to-orange-500 text-white font-bold py-2 px-5 rounded-md transition-colors"
             >
                 Limpar Filtros
             </button>
