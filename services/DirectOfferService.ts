@@ -1,4 +1,5 @@
-import { DirectGigOffer, Venue, Artist } from '../data';
+
+import { DirectGigOffer, Venue, Artist } from '../types';
 import { isSupabaseConfigured, supabase } from '../supabaseClient';
 import { VenueService } from './VenueService';
 import { ArtistService } from './ArtistService';
@@ -106,7 +107,7 @@ export class DirectOfferService {
          return data
             .map((dbOffer: any) => ({
                 ...this.mapOfferFromDb(dbOffer),
-                venue: { id: venueId, name: '', address: '', imageUrl: '' }, // We don't need venue details here
+                venue: { id: venueId, name: '', address: '', imageUrl: '' } as Venue, // We don't need full venue details here
                 artist: dbOffer.artists ? ArtistService.mapArtistFromDb(dbOffer.artists) : undefined,
             }))
             .filter(offer => !!offer.artist) as EnrichedDirectOffer[];

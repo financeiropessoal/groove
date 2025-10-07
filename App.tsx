@@ -1,5 +1,8 @@
+
+
+
 import React from 'react';
-import { Routes, Route, Outlet } from 'react-router-dom';
+import { Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import ArtistGrid from './components/ArtistGrid';
 import HowItWorksPage from './pages/HowItWorksPage';
@@ -13,6 +16,7 @@ import EditRepertoirePage from './pages/EditRepertoirePage';
 import EditGalleryPage from './pages/EditGalleryPage';
 import EditCalendarPage from './pages/EditCalendarPage';
 import EditHospitalityPage from './pages/EditHospitalityPage';
+import EditTechPage from './pages/EditTechPage';
 import FeedbackPage from './pages/EditTestimonialsPage';
 import EditFinancialsPage from './pages/EditFinancialsPage';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
@@ -54,15 +58,7 @@ import GigHubPage from './pages/GigHubPage';
 import SubscriptionPage from './pages/SubscriptionPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import ProProtectedRoute from './components/ProProtectedRoute';
-import MusicianGrid from './components/MusicianGrid';
-import MusicianLoginPage from './pages/MusicianLoginPage';
-import MusicianSignupPage from './pages/MusicianSignupPage';
-import MusicianProtectedRoute from './components/MusicianProtectedRoute';
-import MusicianDashboardPage from './pages/MusicianDashboardPage';
-import EditMusicianProfilePage from './pages/EditMusicianProfilePage';
 import EditMusiciansPage from './pages/EditMusiciansPage';
-import EditMusicianGalleryPage from './pages/EditMusicianGalleryPage';
-import EditMusicianRepertoirePage from './pages/EditMusicianRepertoirePage';
 import FavoriteArtistsPage from './pages/FavoriteArtistsPage';
 import NegotiationPage from './pages/NegotiationPage';
 import EditSpecialPricesPage from './pages/EditSpecialPricesPage';
@@ -70,6 +66,7 @@ import LiveEventPage from './pages/LiveEventPage';
 import PublicFeedbackPage from './pages/PublicFeedbackPage';
 import VenueBookingsPage from './pages/VenueBookingsPage';
 import ReferralPage from './pages/ReferralPage';
+import FreelancerGrid from './components/FreelancerGrid';
 
 const App: React.FC = () => {
   return (
@@ -117,14 +114,14 @@ const App: React.FC = () => {
             <Route path="/edit-gallery" element={<EditGalleryPage />} />
             <Route path="/edit-calendar" element={<EditCalendarPage />} />
             <Route path="/edit-hospitality" element={<EditHospitalityPage />} />
+            <Route path="/edit-tech" element={<EditTechPage />} />
             <Route path="/feedback" element={<FeedbackPage />} />
             <Route path="/edit-musicians" element={<EditMusiciansPage />} />
-            <Route path="/musicians" element={<MusicianGrid />} />
-            <Route path="/musicians/:id" element={<MusicianGrid />} />
             <Route path="/open-gigs" element={<OpenGigsPage />} />
             <Route path="/direct-offers" element={<DirectOffersPage />} />
             <Route path="/subscribe" element={<SubscriptionPage />} />
             <Route path="/referrals" element={<ReferralPage />} />
+            <Route path="/freelancers" element={<FreelancerGrid />} />
 
             <Route element={<ProProtectedRoute />}>
               <Route path="/analytics" element={<AnalyticsPage />} />
@@ -145,13 +142,6 @@ const App: React.FC = () => {
              <Route path="/venue-bookings" element={<VenueBookingsPage />} />
           </Route>
 
-          <Route element={<MusicianProtectedRoute />}>
-            <Route path="/musician-dashboard" element={<MusicianDashboardPage />} />
-            <Route path="/edit-musician-profile" element={<EditMusicianProfilePage />} />
-            <Route path="/edit-musician-gallery" element={<EditMusicianGalleryPage />} />
-            <Route path="/edit-musician-repertoire" element={<EditMusicianRepertoirePage />} />
-          </Route>
-
           <Route element={<SharedProtectedRoute />}>
             <Route path="/conversations" element={<ConversationsPage />} />
             <Route path="/chat/:conversationId" element={<ChatPage />} />
@@ -165,8 +155,8 @@ const App: React.FC = () => {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/venue-login" element={<VenueLoginPage />} />
         <Route path="/venue-signup" element={<VenueSignupPage />} />
-        <Route path="/musician-login" element={<MusicianLoginPage />} />
-        <Route path="/musician-signup" element={<MusicianSignupPage />} />
+        <Route path="/musician-login" element={<Navigate to="/freelancers" />} />
+        <Route path="/musician-signup" element={<Navigate to="/signup" />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />

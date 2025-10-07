@@ -26,7 +26,7 @@ interface AuthContextType {
   authUser: User | null;
   login: (email: string, pass: string) => Promise<LoginResult>;
   logout: () => Promise<void>;
-  signup: (name: string, email: string, pass: string, phone: string, city: string, referrerId: string | null) => Promise<SignupResult>;
+  signup: (name: string, email: string, pass: string, city: string, referrerId: string | null) => Promise<SignupResult>;
   updateArtistProfile: (updatedData: Partial<Artist>) => Promise<void>;
   adminLogin: (email: string, pass: string) => Promise<boolean>;
   adminLogout: () => Promise<void>;
@@ -40,7 +40,6 @@ const mockArtist: Artist = {
   id: 'mock-artist-id-12345',
   name: 'Artista Teste (Mock)',
   email: 'artista@teste.com',
-  phone: '(11) 91234-5678',
   city: 'São Paulo',
   genre: { primary: 'MPB', secondary: ['Pop', 'Rock'] },
   imageUrl: 'https://images.pexels.com/photos/3775164/pexels-photo-3775164.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
@@ -53,8 +52,8 @@ const mockArtist: Artist = {
     'https://images.pexels.com/photos/2111015/pexels-photo-2111015.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2'
   ],
   plans: [
-    { id: 1, name: 'Voz e Violão', price: 800, description: 'Show acústico para eventos intimistas.', includes: ['2 horas de show'], costs:[] },
-    { id: 2, name: 'Banda Completa', price: 2200, description: 'Show completo com banda para animar sua festa.', includes: ['3 horas de show', 'Banda com 4 integrantes'], costs:[] }
+    { id: 1, name: 'Voz e Violão', priceCompany: 800, priceIndividual: 950, description: 'Show acústico para eventos intimistas.', includes: ['2 horas de show'], costs:[] },
+    { id: 2, name: 'Banda Completa', priceCompany: 2200, priceIndividual: 2600, description: 'Show completo com banda para animar sua festa.', includes: ['3 horas de show', 'Banda com 4 integrantes'], costs:[] }
   ],
   repertoire: [{ title: 'Garota de Ipanema', artist: 'Tom Jobim' }],
   testimonials: [{ quote: 'Show incrível!', author: 'Dono do Bar', source: 'Bar do Zé' }],
@@ -64,8 +63,12 @@ const mockArtist: Artist = {
     { id: 'musician-mock-2', name: 'Joana Baixo', instrument: 'Baixo Elétrico', email: 'joana@email.com' }
   ],
   status: 'approved',
-  is_pro: false,
-  profile_completeness: { is_complete: true, missing_fields: [] }
+  is_pro: true,
+  profile_completeness: { is_complete: true, missing_fields: [] },
+  is_freelancer: true,
+  freelancer_instruments: ['Violão', 'Vocal de apoio'],
+  freelancer_rate: 150,
+  freelancer_rate_unit: 'por hora',
 };
 const mockAuthUser: User = {
     id: 'mock-auth-user-id',
@@ -107,7 +110,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (session?.user) {
             setAuthUser(session.user);
             // Check if it's an admin session
-            if (session.user.email === process.env.VITE_ADMIN_EMAIL) {
+            // FIX: Cast `import.meta` to `any` to bypass TypeScript error for `env`.
+            if (session.user.email === (import.meta as any).env.VITE_ADMIN_EMAIL) {
                 setIsAdminAuthenticated(true);
                 setArtist(null);
             } else {
@@ -131,7 +135,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsLoading(true);
         if (session?.user) {
              setAuthUser(session.user);
-             if (session.user.email === process.env.VITE_ADMIN_EMAIL) {
+            // FIX: Cast `import.meta` to `any` to bypass TypeScript error for `env`.
+             if (session.user.email === (import.meta as any).env.VITE_ADMIN_EMAIL) {
                 setIsAdminAuthenticated(true);
                 setArtist(null);
                 navigate('/admin/dashboard');
@@ -187,7 +192,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
   
   // Signup function for artists
-  const signup = async (name: string, email: string, pass: string, phone: string, city: string, referrerId: string | null): Promise<SignupResult> => {
+  const signup = async (name: string, email: string, pass: string, city: string, referrerId: string | null): Promise<SignupResult> => {
     if (!isSupabaseConfigured) {
         alert("Cadastro desabilitado no modo de demonstração.");
         return { success: false };
@@ -212,7 +217,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 id: data.user.id,
                 name: name,
                 email: email,
-                phone: phone,
                 city: city,
                 status: 'pending', // Artists start as pending approval
                 referred_by: referrerId, // Save the referrer ID
@@ -290,7 +294,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return true;
     }
     
-    if (email.toLowerCase() !== (process.env.VITE_ADMIN_EMAIL || '').toLowerCase() || pass !== process.env.VITE_ADMIN_PASSWORD) {
+    // FIX: Cast `import.meta` to `any` to bypass TypeScript error for `env`.
+    if (email.toLowerCase() !== ((import.meta as any).env.VITE_ADMIN_EMAIL || '').toLowerCase() || pass !== (import.meta as any).env.VITE_ADMIN_PASSWORD) {
         return false;
     }
     

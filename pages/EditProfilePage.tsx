@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { Artist } from '../data';
 import Tooltip from '../components/Tooltip';
+import ToggleSwitch from '../components/admin/ToggleSwitch';
 
 const EditProfilePage: React.FC = () => {
     const { artist, updateArtistProfile } = useAuth();
@@ -14,7 +15,6 @@ const EditProfilePage: React.FC = () => {
         name: artist?.name || '',
         primaryGenre: artist?.genre?.primary || '',
         secondaryGenres: artist?.genre?.secondary?.join(', ') || '',
-        phone: artist?.phone || '',
         city: artist?.city || '',
         bio: artist?.bio || '',
         imageUrl: artist?.imageUrl || '',
@@ -22,6 +22,10 @@ const EditProfilePage: React.FC = () => {
         instagram: artist?.socials?.instagram || '',
         spotify: artist?.socials?.spotify || '',
         facebook: artist?.socials?.facebook || '',
+        is_freelancer: artist?.is_freelancer || false,
+        freelancer_instruments: artist?.freelancer_instruments?.join(', ') || '',
+        freelancer_rate: artist?.freelancer_rate || '',
+        freelancer_rate_unit: artist?.freelancer_rate_unit || '',
     });
     const [isSaving, setIsSaving] = useState(false);
     const [youtubeId, setYoutubeId] = useState('');
@@ -31,8 +35,13 @@ const EditProfilePage: React.FC = () => {
     }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        const { name, value, type } = e.target;
+        if (type === 'checkbox') {
+            const { checked } = e.target as HTMLInputElement;
+            setFormData(prev => ({ ...prev, [name]: checked }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
     };
 
     const getYoutubeId = (url: string) => {
@@ -53,6 +62,10 @@ const EditProfilePage: React.FC = () => {
     const genreTags = useMemo(() => {
         return formData.secondaryGenres.split(',').map(s => s.trim()).filter(Boolean);
     }, [formData.secondaryGenres]);
+    
+    const freelancerInstrumentTags = useMemo(() => {
+        return formData.freelancer_instruments.split(',').map(s => s.trim()).filter(Boolean);
+    }, [formData.freelancer_instruments]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -64,7 +77,6 @@ const EditProfilePage: React.FC = () => {
                 primary: formData.primaryGenre,
                 secondary: formData.secondaryGenres.split(',').map(s => s.trim()).filter(Boolean)
             },
-            phone: formData.phone,
             city: formData.city,
             bio: formData.bio,
             imageUrl: formData.imageUrl,
@@ -73,7 +85,11 @@ const EditProfilePage: React.FC = () => {
                 instagram: formData.instagram,
                 spotify: formData.spotify,
                 facebook: formData.facebook
-            }
+            },
+            is_freelancer: formData.is_freelancer,
+            freelancer_instruments: formData.is_freelancer ? formData.freelancer_instruments.split(',').map(s => s.trim()).filter(Boolean) : [],
+            freelancer_rate: formData.is_freelancer ? Number(formData.freelancer_rate) || 0 : 0,
+            freelancer_rate_unit: formData.is_freelancer ? formData.freelancer_rate_unit : '',
         };
 
         try {
@@ -182,21 +198,63 @@ const EditProfilePage: React.FC = () => {
                             </div>
                         </div>
                     </div>
+
+                    <div className="bg-gray-800 p-6 rounded-lg">
+                        <div className="flex items-center gap-3 mb-4">
+                            <h2 className="text-xl font-bold flex items-center gap-2">
+                                <i className="fas fa-guitar text-pink-400"></i>
+                                Perfil Freelancer
+                            </h2>
+                            <Tooltip text="Ative esta opção se você também está disponível para tocar como músico contratado em outros projetos ou bandas.">
+                                <i className="fas fa-question-circle text-gray-400 cursor-help"></i>
+                            </Tooltip>
+                        </div>
+                        <div className="space-y-4">
+                             <ToggleSwitch
+                                label="Quero atuar como Músico Freelancer"
+                                checked={formData.is_freelancer}
+                                onChange={e => setFormData(prev => ({ ...prev, is_freelancer: e.target.checked }))}
+                            />
+                            {formData.is_freelancer && (
+                                <div className="space-y-4 pt-4 border-t border-gray-700 animate-fade-in">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-300 mb-2">Instrumentos/Habilidades (separados por vírgula)</label>
+                                        <input name="freelancer_instruments" value={formData.freelancer_instruments} onChange={handleChange} placeholder="Ex: Guitarra base, Vocal de apoio, Sanfona" className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4" />
+                                        {freelancerInstrumentTags.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 pt-2">
+                                                {freelancerInstrumentTags.map(tag => (
+                                                    <span key={tag} className="bg-gray-700 text-gray-200 text-xs font-medium px-2.5 py-1 rounded-full">{tag}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Seu Valor/Cachê (R$)</label>
+                                            <input name="freelancer_rate" type="number" value={formData.freelancer_rate} onChange={handleChange} placeholder="Ex: 200" className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-300 mb-2">Unidade</label>
+                                            <input name="freelancer_rate_unit" value={formData.freelancer_rate_unit} onChange={handleChange} placeholder="Ex: por hora, por evento" className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4" />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+
                      <div className="bg-gray-800 p-6 rounded-lg">
                          <div className="flex items-center gap-3 mb-4">
                              <h2 className="text-xl font-bold flex items-center gap-2">
                                 <i className="fas fa-share-alt text-pink-400"></i>
-                                Contato e Redes Sociais
+                                Redes Sociais
                             </h2>
                              <Tooltip text="Facilite para os contratantes te encontrarem fora da plataforma e para a equipe de produção entrar em contato.">
                                 <i className="fas fa-question-circle text-gray-400 cursor-help"></i>
                             </Tooltip>
                         </div>
                         <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Telefone de Contato (Produção)</label>
-                                <input name="phone" value={formData.phone} onChange={handleChange} className="w-full bg-gray-900 border border-gray-700 rounded-md py-2.5 px-4 focus:ring-2 focus:ring-pink-500 focus:outline-none" />
-                            </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-300 mb-2">Instagram URL</label>

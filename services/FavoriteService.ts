@@ -1,7 +1,8 @@
+
 import { isSupabaseConfigured, supabase } from '../supabaseClient';
 import { ArtistService } from './ArtistService';
 import { VenueService } from './VenueService';
-import { Artist, Venue } from '../data';
+import { Artist, Venue } from '../types';
 
 export class FavoriteService {
 

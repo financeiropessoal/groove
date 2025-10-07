@@ -80,6 +80,7 @@ const ArtistDashboardPage: React.FC = () => {
                     <DashboardCard to="/edit-plans" icon="fa-box-open" title="Pacotes de Show" description="Crie e gerencie os formatos que você oferece." />
                     <DashboardCard to="/edit-musicians" icon="fa-users" title="Músicos da Banda" description="Gerencie os músicos que tocam com você." />
                     <DashboardCard to="/edit-hospitality" icon="fa-utensils" title="Rider de Hospitalidade" description="Liste suas necessidades de camarim." />
+                    <DashboardCard to="/edit-tech" icon="fa-cogs" title="Rider Técnico" description="Especifique suas necessidades de som e palco." />
                     <DashboardCard to="/feedback" icon="fa-comments" title="Feedbacks" description="Veja avaliações de contratantes e do público." />
                 </div>
             </div>
@@ -99,6 +100,7 @@ const ArtistDashboardPage: React.FC = () => {
                     )}
                     <DashboardCard to="/open-gigs" icon="fa-search-dollar" title="Oportunidades" description="Encontre vagas abertas e candidate-se." highlight={!todaysGig} />
                     <DashboardCard to="/direct-offers" icon="fa-envelope-open-text" title="Propostas Diretas" description="Veja as propostas que enviaram para você." />
+                    <DashboardCard to="/freelancers" icon="fa-guitar" title="Buscar Freelancers" description="Encontre músicos para complementar sua banda." />
                     <DashboardCard to="/edit-calendar" icon="fa-calendar-alt" title="Minha Agenda" description="Visualize e gerencie suas datas reservadas." />
                     <DashboardCard to="/referrals" icon="fa-gift" title="Indique e Ganhe" description="Convide artistas e ganhe meses de PRO grátis." />
                     <DashboardCard to="/edit-financials" icon="fa-wallet" title="Minhas Finanças" description="Acompanhe seus ganhos e despesas." pro={true} />

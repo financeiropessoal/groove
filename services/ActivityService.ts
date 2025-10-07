@@ -1,4 +1,5 @@
-import { Artist, Venue, GigOffer } from '../data';
+
+import { Artist, Venue, GigOffer } from '../types';
 import { ArtistService } from './ArtistService';
 import { GigService } from './GigService';
 import { VenueService } from './VenueService';

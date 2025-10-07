@@ -1,4 +1,5 @@
-import { Artist, GigOffer } from '../data';
+
+import { Artist, GigOffer } from '../types';
 import { isSupabaseConfigured, supabase } from '../supabaseClient';
 import { ArtistService } from './ArtistService';
 import { EmailService } from './EmailService';

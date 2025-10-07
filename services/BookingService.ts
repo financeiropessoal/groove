@@ -1,7 +1,8 @@
+
 import { isSupabaseConfigured, supabase } from '../supabaseClient';
 import { ArtistService } from './ArtistService';
 import { VenueService } from './VenueService';
-import { Artist, Venue, Booking } from '../data';
+import { Artist, Venue, Booking } from '../types';
 import { ManualGigService, ManualGig } from './ManualGigService';
 
 interface CreateBookingPayload {
@@ -119,6 +120,9 @@ export class BookingService {
             return Promise.resolve([]);
         }
 
+        // FIX: Fetch venue details to determine pricing based on contractor type.
+        const venue = await VenueService.getVenueById(venueId);
+
         const { data, error } = await supabase
             .from('bookings')
             .select('*, artists(*)') // a simple join is enough
@@ -134,7 +138,13 @@ export class BookingService {
             const artist = booking.artists ? ArtistService.mapArtistFromDb(booking.artists) : null;
             const plan = artist?.plans?.find(p => p.id === booking.plan_id);
             // If it's a direct offer, booking.payment might be set. Otherwise, use plan price.
-            const payment = booking.payment || plan?.price || 0;
+            // FIX: Determine correct plan price based on venue's contractor type.
+            const planPrice = plan
+                ? venue?.contractor_type === 'individual'
+                    ? plan.priceIndividual
+                    : plan.priceCompany
+                : 0;
+            const payment = booking.payment || planPrice || 0;
 
             return {
                 id: booking.id,
@@ -189,7 +199,8 @@ export class BookingService {
 
         const { data, error } = await supabase
             .from('bookings')
-            .select('*, venues (name)')
+            // FIX: Select contractor_type to determine correct pricing.
+            .select('*, venues (name, contractor_type)')
             .eq('artist_id', artistId)
             .order('date', { ascending: false });
 
@@ -202,7 +213,13 @@ export class BookingService {
 
         return data.map((booking: any) => {
             const plan = artist?.plans?.find(p => p.id === booking.plan_id);
-            const payment = plan ? plan.price : booking.payment || 0;
+            // FIX: Determine correct plan price based on venue's contractor type.
+            const planPrice = plan
+                ? booking.venues?.contractor_type === 'individual'
+                    ? plan.priceIndividual
+                    : plan.priceCompany
+                : 0;
+            const payment = plan ? planPrice : (booking.payment || 0);
 
             return {
                 id: booking.id,
@@ -265,8 +282,15 @@ export class BookingService {
         }
 
         const artist = data.artists ? ArtistService.mapArtistFromDb(data.artists) : null;
+        // FIX: Fetch venue to determine contractor type for correct pricing
+        const venue = await VenueService.getVenueById(venueId);
         const plan = artist?.plans?.find(p => p.id === data.plan_id);
-        const payment = data.payment || plan?.price || 0;
+        const planPrice = plan
+            ? venue?.contractor_type === 'individual'
+                ? plan.priceIndividual
+                : plan.priceCompany
+            : 0;
+        const payment = data.payment || planPrice || 0;
 
         return {
             id: data.id,
@@ -364,10 +388,23 @@ export class BookingService {
         ]);
         
         const plan = artist?.plans?.find(p => p.id === data.plan_id);
-        const payment = plan?.price || data.payment || 0; // handle direct offers too
+        // FIX: Determine correct plan price based on venue's contractor type.
+        const planPrice = plan
+            ? venue?.contractor_type === 'individual'
+                ? plan.priceIndividual
+                : plan.priceCompany
+            : 0;
+        const payment = planPrice || data.payment || 0; // handle direct offers too
 
         return {
             ...data,
+            id: data.id,
+            artistId: data.artist_id,
+            venueId: data.venue_id,
+            planId: data.plan_id,
+            date: data.date,
+            status: data.status,
+            payoutStatus: data.payout_status,
             artist,
             venue,
             venueName: venue?.name,

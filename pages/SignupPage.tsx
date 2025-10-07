@@ -18,7 +18,6 @@ const BRAZILIAN_CITIES = [
 const SignupPage: React.FC = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
     const [city, setCity] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -57,7 +56,7 @@ const SignupPage: React.FC = () => {
         setError('');
         setIsLoading(true);
         const referrerId = searchParams.get('ref');
-        const result = await signup(name, email, password, phone, city, referrerId);
+        const result = await signup(name, email, password, city, referrerId);
         setIsLoading(false);
         if (result.success) {
             if (result.requiresConfirmation) {
@@ -92,7 +91,6 @@ const SignupPage: React.FC = () => {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Nome Artístico / Banda" required className="w-full bg-gray-900 rounded-md py-2.5 px-4" />
                         <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" required className="w-full bg-gray-900 rounded-md py-2.5 px-4" />
-                        <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="Telefone / WhatsApp" required className="w-full bg-gray-900 rounded-md py-2.5 px-4" />
                         
                         <div className="relative">
                             <input 

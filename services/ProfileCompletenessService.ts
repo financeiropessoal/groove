@@ -1,5 +1,6 @@
-import { Artist, Venue } from '../data';
-import { Musician } from '../types';
+
+
+import { Artist, Venue, Artist as Musician } from '../types';
 
 export interface CompletenessResult {
     is_complete: boolean;
@@ -61,7 +62,8 @@ export const ProfileCompletenessService = {
         if (!musician.imageUrl || musician.imageUrl.includes('1043471')) {
             missing_fields.push('Adicionar uma foto de perfil.');
         }
-        if (!musician.instrument) {
+        // FIX: The 'Artist' type (aliased as Musician) has 'freelancer_instruments' (an array), not 'instrument'.
+        if (!musician.freelancer_instruments || musician.freelancer_instruments.length === 0) {
             missing_fields.push('Especificar seu instrumento principal.');
         }
         if (!musician.city) {

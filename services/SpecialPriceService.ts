@@ -1,5 +1,6 @@
+
 import { isSupabaseConfigured, supabase } from '../supabaseClient';
-import { SpecialPrice, Venue } from '../data';
+import { SpecialPrice, Venue } from '../types';
 
 export class SpecialPriceService {
 

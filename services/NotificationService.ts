@@ -1,3 +1,4 @@
+
 import { Notification } from '../types';
 import { DirectOfferService } from './DirectOfferService';
 import { GigService } from './GigService';
@@ -21,7 +22,7 @@ export class NotificationServiceManager {
         type: 'offer',
         title: 'Nova Proposta',
         message: `Você tem ${pendingOffers.length} nova${pendingOffers.length > 1 ? 's' : ''} proposta${pendingOffers.length > 1 ? 's' : ''} de show!`,
-        link: '/dashboard',
+        link: '/direct-offers',
         isRead: false,
         timestamp: new Date(now.getTime() - 10 * 60 * 1000) // 10 mins ago
       });
@@ -65,7 +66,7 @@ export class NotificationServiceManager {
             type: 'gig_booked',
             title: 'Vaga Preenchida',
             message: `O artista ${latest.artist?.name || ''} reservou sua vaga para ${new Date(latest.date).toLocaleDateString('pt-BR')}.`,
-            link: '/venue-dashboard',
+            link: '/sent-offers',
             isRead: false,
             timestamp: new Date(now.getTime() - 30 * 60 * 1000) // 30 mins ago
         });

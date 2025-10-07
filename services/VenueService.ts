@@ -1,4 +1,5 @@
-import { Venue } from '../data';
+
+import { Venue } from '../types';
 import { isSupabaseConfigured, supabase } from '../supabaseClient';
 
 export class VenueService {

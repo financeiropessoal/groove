@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -87,24 +88,23 @@ const EditCalendarPage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingGig, setEditingGig] = useState<EnrichedBooking | null>(null);
 
-    const fetchBookings = useCallback(() => {
+    const fetchBookings = useCallback(async () => {
         if (artist) {
             setIsLoading(true);
-            BookingService.getBookingsForArtist(artist.id).then(data => {
-                setBookings(data);
-                
-                // FIX: Check if dates have changed before updating the profile to prevent an infinite loop.
-                const newBookedDates = [...new Set(data.map(b => b.date))].sort();
-                const currentBookedDates = (artist.bookedDates || []).sort();
+            const data = await BookingService.getBookingsForArtist(artist.id);
+            setBookings(data);
+            
+            // FIX: Check if dates have changed before updating the profile to prevent an infinite loop.
+            const newBookedDates = [...new Set(data.map(b => b.date))].sort();
+            const currentBookedDates = (artist.bookedDates || []).sort();
 
-                if (JSON.stringify(newBookedDates) !== JSON.stringify(currentBookedDates)) {
-                    updateArtistProfile({ bookedDates: newBookedDates });
-                    // The context update will trigger a re-render and the effect will run again,
-                    // but this time the dates will match and the `else` block will be hit, stopping the loop.
-                } else {
-                    setIsLoading(false);
-                }
-            });
+            if (JSON.stringify(newBookedDates) !== JSON.stringify(currentBookedDates)) {
+                await updateArtistProfile({ bookedDates: newBookedDates });
+                // The context update will trigger a re-render and the effect will run again,
+                // but this time the dates will match and the `else` block will be hit, stopping the loop.
+            } else {
+                setIsLoading(false);
+            }
         } else {
             setIsLoading(false);
         }

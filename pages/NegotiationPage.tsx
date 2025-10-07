@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -5,7 +6,7 @@ import { useVenueAuth } from '../contexts/VenueAuthContext';
 import { DirectOfferService, EnrichedDirectOffer } from '../services/DirectOfferService';
 import { ChatService, Message } from '../services/ChatService';
 import { useToast } from '../contexts/ToastContext';
-import { DirectGigOffer } from '../data';
+import { DirectGigOffer } from '../types';
 
 const NegotiationPage: React.FC = () => {
     const { offerId } = useParams<{ offerId: string }>();

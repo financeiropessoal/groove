@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ProfileCompleteness } from '../data';
+import { ProfileCompleteness } from '../types';
 
 interface ProfileCompletenessAlertProps {
     completeness: ProfileCompleteness | undefined;

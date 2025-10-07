@@ -6,10 +6,10 @@ let isSupabaseConfigured: boolean;
 const placeholderUrl = "https://placeholder.supabase.co";
 
 try {
-  // @FIX: Replaced import.meta.env with process.env
-  const supabaseUrl = process.env.VITE_SUPABASE_URL || placeholderUrl;
-  // @FIX: Replaced import.meta.env with process.env
-  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || "ey-placeholder-key";
+  // FIX: Cast `import.meta` to `any` to bypass TypeScript error for `env`.
+  const supabaseUrl = (import.meta as any).env.VITE_SUPABASE_URL || placeholderUrl;
+  // FIX: Cast `import.meta` to `any` to bypass TypeScript error for `env`.
+  const supabaseKey = (import.meta as any).env.VITE_SUPABASE_ANON_KEY || "ey-placeholder-key";
   
   if (!supabaseUrl || !supabaseKey) {
     throw new Error("Variáveis de ambiente do Supabase não encontradas.");

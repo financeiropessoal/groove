@@ -1,4 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+
+
+
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useVenueAuth } from '../contexts/VenueAuthContext';
@@ -17,6 +20,8 @@ const Header: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const [isLoginMenuOpen, setIsLoginMenuOpen] = useState(false);
+  const loginMenuRef = useRef<HTMLDivElement>(null);
   
   const currentUser = useMemo(() => {
     if (isArtistAuthenticated && artist && artistAuthUser) {
@@ -71,6 +76,19 @@ const Header: React.FC = () => {
     };
   }, [isArtistAuthenticated, artist, isVenueAuthenticated, currentVenue, currentUser]);
   
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+        if (loginMenuRef.current && !loginMenuRef.current.contains(event.target as Node)) {
+            setIsLoginMenuOpen(false);
+        }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const handleToggleNotifications = () => {
@@ -153,9 +171,51 @@ const Header: React.FC = () => {
     }
 
     return (
-        <Link to="/login" className="px-4 py-2.5 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-lg text-sm font-semibold hover:shadow-[0_0_15px_rgba(236,72,153,0.7)] transition-shadow">
-            Área do Artista
-        </Link>
+        <div className="relative" ref={loginMenuRef}>
+            <button 
+                onClick={() => setIsLoginMenuOpen(prev => !prev)}
+                className="px-4 py-2.5 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-lg text-sm font-semibold hover:shadow-[0_0_15px_rgba(236,72,153,0.7)] transition-shadow flex items-center gap-2"
+            >
+                Entrar
+                <i className={`fas fa-chevron-down transition-transform duration-200 ${isLoginMenuOpen ? 'rotate-180' : ''}`}></i>
+            </button>
+            {isLoginMenuOpen && (
+                <div className="absolute top-full right-0 mt-2 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-50 animate-fade-in p-2">
+                    <ul className="space-y-1">
+                        <li>
+                            <Link 
+                                to="/login" 
+                                onClick={() => setIsLoginMenuOpen(false)}
+                                className="block w-full text-left px-4 py-3 rounded-md text-gray-300 hover:bg-pink-600 hover:text-white transition-colors"
+                            >
+                                <i className="fas fa-microphone-alt w-6 mr-2"></i>
+                                Login Artista
+                            </Link>
+                        </li>
+                        <li>
+                            <Link 
+                                to="/login" 
+                                onClick={() => setIsLoginMenuOpen(false)}
+                                className="block w-full text-left px-4 py-3 rounded-md text-gray-300 hover:bg-pink-600 hover:text-white transition-colors"
+                            >
+                                <i className="fas fa-guitar w-6 mr-2"></i>
+                                Login Freelancer
+                            </Link>
+                        </li>
+                        <li>
+                            <Link 
+                                to="/venue-login" 
+                                onClick={() => setIsLoginMenuOpen(false)}
+                                className="block w-full text-left px-4 py-3 rounded-md text-gray-300 hover:bg-pink-600 hover:text-white transition-colors"
+                            >
+                                <i className="fas fa-store w-6 mr-2"></i>
+                                Login Contratante
+                            </Link>
+                        </li>
+                    </ul>
+                </div>
+            )}
+        </div>
     );
   }
   
@@ -184,25 +244,11 @@ const Header: React.FC = () => {
               Artistas
             </NavLink>
             <NavLink
-              to="/musician-login"
-              className={({ isActive }) => `${navButtonClasses} ${isActive ? activeClasses : inactiveClasses}`}
-            >
-              Músicos
-            </NavLink>
-            <NavLink
               to="/how-it-works"
               className={({ isActive }) => `${navButtonClasses} ${isActive ? activeClasses : inactiveClasses}`}
             >
               Como Funciona
             </NavLink>
-            {!isAuthenticated && (
-               <NavLink
-                to="/venue-login"
-                className={({ isActive }) => `${navButtonClasses} ${isActive ? activeClasses : inactiveClasses}`}
-              >
-                Login Contratante
-              </NavLink>
-            )}
           </nav>
            <AuthSection />
         </div>
@@ -250,13 +296,6 @@ const Header: React.FC = () => {
                     Artistas
                 </NavLink>
                 <NavLink
-                    to="/musician-login"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={({ isActive }) => `${mobileNavButtonClasses} ${isActive ? mobileActiveClasses : mobileInactiveClasses}`}
-                    >
-                    Músicos
-                </NavLink>
-                <NavLink
                     to="/how-it-works"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={({ isActive }) => `${mobileNavButtonClasses} ${isActive ? mobileActiveClasses : mobileInactiveClasses}`}
@@ -296,11 +335,17 @@ const Header: React.FC = () => {
 
                 {!isAuthenticated && (
                     <>
-                        <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className={`${mobileNavButtonClasses} ${mobileActiveClasses}`}>
-                            Área do Artista
+                        <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className={`${mobileNavButtonClasses} ${mobileActiveClasses} flex items-center gap-3`}>
+                            <i className="fas fa-microphone-alt w-5"></i>
+                            <span>Login Artista</span>
                         </Link>
-                        <Link to="/venue-login" onClick={() => setIsMobileMenuOpen(false)} className={`${mobileNavButtonClasses} ${mobileInactiveClasses}`}>
-                            Login Contratante
+                        <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className={`${mobileNavButtonClasses} ${mobileInactiveClasses} flex items-center gap-3`}>
+                            <i className="fas fa-guitar w-5"></i>
+                            <span>Login Freelancer</span>
+                        </Link>
+                        <Link to="/venue-login" onClick={() => setIsMobileMenuOpen(false)} className={`${mobileNavButtonClasses} ${mobileInactiveClasses} flex items-center gap-3`}>
+                            <i className="fas fa-store w-5"></i>
+                            <span>Login Contratante</span>
                         </Link>
                     </>
                 )}

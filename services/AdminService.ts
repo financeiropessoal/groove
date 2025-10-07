@@ -375,6 +375,7 @@ export class AdminService {
     }
 
     static async generateProfileQualityScore(artist: Artist): Promise<{ score: number; issues: string[] }> {
+        // FIX: Use `process.env.API_KEY` as per Gemini API guidelines and to resolve TypeScript error.
         const apiKey = process.env.API_KEY;
         if (!apiKey) return { score: 0, issues: ['API Key not configured.'] };
 
@@ -421,6 +422,7 @@ export class AdminService {
     }
     
     static async generateRejectionFeedback(artistName: string, issues: string[]): Promise<string> {
+        // FIX: Use `process.env.API_KEY` as per Gemini API guidelines and to resolve TypeScript error.
         const apiKey = process.env.API_KEY;
         if (!apiKey) return "API Key not configured.";
 

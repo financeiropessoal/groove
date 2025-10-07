@@ -1,5 +1,6 @@
+
 // services/AnalyticsService.ts
-import { Artist } from '../data';
+import { Artist } from '../types';
 import { SearchAnalyticsData, GenreTrend, KeywordTrend, ArtistAppearance, ProfileViewTrend, VenueActivity } from '../types';
 import { ArtistService } from './ArtistService';
 import { VenueService } from './VenueService';

@@ -1,3 +1,5 @@
+
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GoogleGenAI } from '@google/genai';
@@ -15,7 +17,7 @@ const GeneratePostPage: React.FC = () => {
   const [generatedPost, setGeneratedPost] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // FIX: Ensure API key is only read from `process.env` as per project requirements.
+  // FIX: Use `process.env.API_KEY` as per Gemini API guidelines and to resolve TypeScript error.
   const apiKey = process.env.API_KEY;
 
   if (!apiKey && isSupabaseConfigured) { // Show Gemini-specific warning only if Supabase is configured

@@ -66,7 +66,14 @@ const BookingPage: React.FC = () => {
     }
 
     const selectedPlan = artist.plans?.find(p => p.id === selectedPlanId);
-    const totalCost = selectedPlan ? selectedPlan.price * dates.length : 0;
+    
+    const pricePerDate = selectedPlan 
+        ? currentVenue?.contractor_type === 'individual' 
+            ? selectedPlan.priceIndividual 
+            : selectedPlan.priceCompany
+        : 0;
+        
+    const totalCost = pricePerDate * dates.length;
 
     return (
         <>
@@ -91,6 +98,7 @@ const BookingPage: React.FC = () => {
                                         isSelected={selectedPlanId === plan.id}
                                         onSelect={() => setSelectedPlanId(plan.id)}
                                         isVenueAuthenticated={isVenueAuthenticated}
+                                        contractorType={currentVenue?.contractor_type}
                                     />
                                 ))}
                             </div>

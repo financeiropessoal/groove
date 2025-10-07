@@ -1,8 +1,9 @@
+
 import { isSupabaseConfigured, supabase } from '../supabaseClient';
 import { ArtistService } from './ArtistService';
 import { VenueService } from './VenueService';
-import { Artist } from '../data';
-import { Venue } from '../data';
+import { Artist } from '../types';
+import { Venue } from '../types';
 
 export interface Conversation {
     id: number;
@@ -81,10 +82,10 @@ export class ChatService {
     static async getOtherParty(conversation: Conversation, currentUserType: 'artist' | 'venue'): Promise<OtherParty | null> {
         if (currentUserType === 'artist') {
             const venue = await VenueService.getVenueById(conversation.venue_id);
-            return venue ? { ...venue, type: 'venue' } : null;
+            return venue ? { id: venue.id, name: venue.name, imageUrl: venue.imageUrl, type: 'venue' } : null;
         } else {
             const artist = await ArtistService.getArtistById(conversation.artist_id);
-            return artist ? { ...artist, type: 'artist' } : null;
+            return artist ? { id: artist.id, name: artist.name, imageUrl: artist.imageUrl, type: 'artist' } : null;
         }
     }
 
